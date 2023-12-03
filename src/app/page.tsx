@@ -1,0 +1,54 @@
+"use client";
+import { MagnifyingGlassIcon } from "@heroicons/react/24/solid";
+import { Box, Grid, TextFieldInput, TextFieldRoot, TextFieldSlot } from "@radix-ui/themes";
+import { useRouter } from "next/navigation";
+
+export default function Home() {
+  const router = useRouter();
+
+  return (
+    <div>
+      <div className="">
+        <TextFieldRoot>
+          <TextFieldSlot>
+            <MagnifyingGlassIcon height="16" width="16" />
+          </TextFieldSlot>
+          <TextFieldInput placeholder="Search the credentials..." />
+        </TextFieldRoot>
+      </div>
+
+      <Grid columns="3" gap="3" width="auto">
+        <Box height="9">
+          <div
+            onClick={() => router.push(`/credentials/github`, { scroll: false })}
+            className="border-2 border-black"
+          >
+            Github Credential
+          </div>
+        </Box>
+
+        <Box height="9">
+          <div>Hello</div>
+        </Box>
+
+        <Box height="9">
+          <div>Hello</div>
+        </Box>
+      </Grid>
+      {/* <div className="">
+          <Box height="9">
+            <div>Hello</div>
+          </Box>
+
+          <Box height="9">
+            <div>Hello</div>
+          </Box>
+
+          <Box height="9">
+            <div>Hello</div>
+          </Box>
+        </Grid>
+      </div> */}
+    </div>
+  );
+}

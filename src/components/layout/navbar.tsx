@@ -18,7 +18,7 @@ export const Navbar = () => {
         <Logo />
         {!isReconnecting && !isConnecting && (
           <div className="flex items-center gap-4 duration-100 animate-in fade-in">
-            <ThemeToggle />
+            {/* <ThemeToggle /> */}
             <WalletStatus />
           </div>
         )}

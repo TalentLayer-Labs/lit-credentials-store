@@ -8,7 +8,8 @@ export default function Home() {
 
   return (
     <div>
-      <div className="">
+      <div className="text-center text-3xl mt-10">Get Credentials</div>
+      <div className="mt-10">
         <TextFieldRoot>
           <TextFieldSlot>
             <MagnifyingGlassIcon height="16" width="16" />
@@ -17,38 +18,16 @@ export default function Home() {
         </TextFieldRoot>
       </div>
 
-      <Grid columns="3" gap="3" width="auto">
+      <Grid columns="3" gap="3" width="auto" className="mt-5">
         <Box height="9">
           <div
             onClick={() => router.push(`/credentials/github`, { scroll: false })}
-            className="border-2 border-black"
+            className="rounded-lg p-5 border-2 border-black"
           >
             Github Credential
           </div>
         </Box>
-
-        <Box height="9">
-          <div>Hello</div>
-        </Box>
-
-        <Box height="9">
-          <div>Hello</div>
-        </Box>
       </Grid>
-      {/* <div className="">
-          <Box height="9">
-            <div>Hello</div>
-          </Box>
-
-          <Box height="9">
-            <div>Hello</div>
-          </Box>
-
-          <Box height="9">
-            <div>Hello</div>
-          </Box>
-        </Grid>
-      </div> */}
     </div>
   );
 }

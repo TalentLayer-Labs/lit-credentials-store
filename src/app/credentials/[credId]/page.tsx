@@ -329,7 +329,8 @@ export default function CredentialPage() {
                         {claim.criteria}
                       </Text>
                       <Text as="div" color="gray" size="2">
-                        {claim.condition} {claim.value}
+                        {claim.condition}{" "}
+                        {Array.isArray(claim.value) ? `[${claim.value.join(", ")}]` : claim.value}
                       </Text>
                     </Card>
                   ))}

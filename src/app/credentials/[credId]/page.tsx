@@ -58,6 +58,7 @@ export default function CredentialPage() {
   const { address } = useAccount();
   const [credential, setCredential] = useState<Credential>();
   const [initialProfile, setInitialProfile] = useState<any>({});
+  const [transactionHash, setTransactionHash] = useState<string>();
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -71,7 +72,6 @@ export default function CredentialPage() {
   }, []);
 
   useEffect(() => {
-    console.log(address);
     if (!code || !address) return;
 
     (async () => {
@@ -127,7 +127,7 @@ export default function CredentialPage() {
     const oldProfileCID = (profile as any)[3] as string;
     (async () => {
       const { data } = await axios.get(
-        `https://talentlayer-testing.infura-ipfs.io/ipfs/${oldProfileCID}`,
+        `${process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL}/ipfs/${oldProfileCID}`,
       );
       setInitialProfile(data);
     })();
@@ -188,13 +188,16 @@ export default function CredentialPage() {
       : undefined,
   );
 
-  const { write } = useContractWrite(config);
+  const { writeAsync } = useContractWrite(config);
 
   useEffect(() => {
-    if (!newCid || !write) return;
+    if (!newCid || !writeAsync) return;
 
-    write();
-  }, [newCid, write]);
+    (async () => {
+      const { hash } = await writeAsync();
+      setTransactionHash(hash);
+    })().catch((err) => console.error(err));
+  }, [newCid, writeAsync]);
 
   async function encrypt() {
     if (!client || !credential) return;
@@ -215,24 +218,35 @@ export default function CredentialPage() {
         c.credential.author !== credential.credential.author ||
         c.credential.platform !== credential.credential.platform,
     );
-    const _creadential = {
-      ...credential,
-    };
-    delete _creadential.credential.claims;
-    _creadential.credential.claimsEncrypted = {
+    const newCredential = structuredClone(credential);
+    delete newCredential.credential.claims;
+    newCredential.credential.claimsEncrypted = {
       ...data,
       total: credential.credential.claims?.length || 0,
       condition: accessControlConditions,
     };
-    profileData.credentials.push(credential);
-    console.log(profileData);
+    profileData.credentials.push(newCredential);
     const cid = await postToIPFS(JSON.stringify(profileData));
     setNewCid(cid);
-
-    // profileData.credentials.filter()
   }
 
-  // async function decrypt() {}
+  async function save() {
+    if (!credential) return;
+
+    // fetch the file from ipfs
+    const profileData = { ...initialProfile };
+    if (!profileData.credentials?.length) {
+      profileData.credentials = [];
+    }
+    profileData.credentials = profileData.credentials.filter(
+      (c: any) =>
+        c.credential.author !== credential.credential.author ||
+        c.credential.platform !== credential.credential.platform,
+    );
+    profileData.credentials.push(credential);
+    const cid = await postToIPFS(JSON.stringify(profileData));
+    setNewCid(cid);
+  }
 
   if (!profile || !(profile as any[])[3]) {
     return (
@@ -277,43 +291,61 @@ export default function CredentialPage() {
         </ol>
       </nav>
 
-      <Steps stepId={stepId} />
-      <div className="mt-5"></div>
-      {loading && <div>Loading...</div>}
-      {stepId === 1 ? (
+      {transactionHash ? (
         <div>
+          The credential is added to your profile. Click{" "}
           <a
-            href={connectionUrl}
-            type="button"
-            className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            href={`${process.env.NEXT_PUBLIC_BLOCKEXPLORER_LINK}/tx/${transactionHash}`}
+            target="_blank"
+            className="text-blue-500"
           >
-            Connect with Github
-          </a>
+            here
+          </a>{" "}
+          to open block explorer.
         </div>
       ) : (
-        <div>
-          <div className="my-4 text-xl font-bold">Claims</div>
-          <div className="">
-            <div className="grid grid-cols-3 gap-3">
-              {credential?.credential.claims?.map((claim) => (
-                <Card key={claim.criteria} variant="surface" className="">
-                  <Text as="div" size="2" weight="bold">
-                    {claim.criteria}
-                  </Text>
-                  <Text as="div" color="gray" size="2">
-                    {claim.condition} {claim.value}
-                  </Text>
-                </Card>
-              ))}
+        <>
+          <Steps stepId={stepId} />
+          <div className="mt-5"></div>
+          {loading && <div>Loading...</div>}
+          {stepId === 1 ? (
+            <div>
+              <a
+                href={connectionUrl}
+                type="button"
+                className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              >
+                Connect with Github
+              </a>
             </div>
-          </div>
-          <div className="text-center">
-            <button className="btn btn-primary mt-4">Save</button>
-            <button onClick={encrypt} className="ml-4 mt-4 btn btn-secondary">
-              Encrypt & Save
-            </button>
-          </div>
-        </div>
+          ) : (
+            <div>
+              <div className="my-4 text-xl font-bold">Claims</div>
+              <div className="">
+                <div className="grid grid-cols-3 gap-3">
+                  {credential?.credential.claims?.map((claim) => (
+                    <Card key={claim.criteria} variant="surface" className="">
+                      <Text as="div" size="2" weight="bold">
+                        {claim.criteria}
+                      </Text>
+                      <Text as="div" color="gray" size="2">
+                        {claim.condition} {claim.value}
+                      </Text>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+              <div className="text-center">
+                <button onClick={save} className="btn btn-primary mt-4">
+                  Save
+                </button>
+                <button onClick={encrypt} className="ml-4 mt-4 btn btn-secondary">
+                  Encrypt & Save
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

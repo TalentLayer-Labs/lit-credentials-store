@@ -64,7 +64,7 @@ export default function CredentialPage() {
     const params = new URLSearchParams();
     params.set("client_id", env.NEXT_PUBLIC_GITHUB_OAUTH_CLIENT_ID);
     params.set("scope", "read:user");
-    params.set("redirect_url", "http://localhost:3000/credentials/github");
+    params.set("redirect_url", window.location.origin + window.location.pathname);
 
     console.log(`https://github.com/login/oauth/authorize?${params.toString()}`);
 

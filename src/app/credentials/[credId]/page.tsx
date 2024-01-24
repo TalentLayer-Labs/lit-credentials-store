@@ -1,7 +1,7 @@
 "use client";
 
 import { HomeIcon } from "@heroicons/react/24/solid";
-import { EvmContractConditions, AccessControlConditions } from "@lit-protocol/types";
+import { EvmContractConditions } from "@lit-protocol/types";
 import { Card, Text } from "@radix-ui/themes";
 import axios from "axios";
 import Link from "next/link";
@@ -22,32 +22,6 @@ import StepsTabs from "@/components/steps-tabs";
 import { env } from "@/env.mjs";
 import { postToIPFS } from "@/utils/ipfs";
 import lit from "@/utils/lit-utils/lit";
-
-interface Credential {
-  issuer: string;
-  signature1: string;
-  signature2: string;
-  credential: {
-    author: string;
-    platform: string;
-    description: string;
-    issueTime: string;
-    expiryTime: string;
-    userAddress: string;
-    claims?: {
-      platform: string;
-      criteria: string;
-      condition: string;
-      value: any;
-    }[];
-    claimsEncrypted?: {
-      total: number;
-      ciphertext: string;
-      dataToEncryptHash: string;
-      condition: EvmContractConditions | AccessControlConditions;
-    };
-  };
-}
 
 export default function CredentialPage() {
   const [stepId, setStepId] = useState(1);

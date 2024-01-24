@@ -32,10 +32,6 @@ class Lit {
       await this.connect();
     }
 
-    // const authSig = await LitJsSdk.checkAndSignAuthMessage({
-    //   chain: this.chain,
-    // });
-
     const authSig = await signAndSaveAuthMessage({
       web3: client,
       expiration: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),

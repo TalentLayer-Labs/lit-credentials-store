@@ -16,14 +16,12 @@ import {
 } from "wagmi";
 
 import { talentlayerIdABI } from "@/abis/talentlayer-id";
+import { availableCreds } from "@/availableCred";
 import { CreateTalentLayerId } from "@/components/create-talent-layer-id";
+import StepsTabs from "@/components/steps-tabs";
 import { env } from "@/env.mjs";
 import { postToIPFS } from "@/utils/ipfs";
-
-import lit from "./lit";
-import Steps from "./steps";
-import { useRouter } from "next/navigation";
-import { availableCreds } from "@/availableCred";
+import lit from "@/utils/lit-utils/lit";
 
 interface Credential {
   issuer: string;
@@ -309,7 +307,7 @@ export default function CredentialPage() {
         </div>
       ) : (
         <>
-          <Steps stepId={stepId} />
+          <StepsTabs stepId={stepId} />
           <div className="mt-5"></div>
           {loading && <div>Loading...</div>}
           {stepId === 1 ? (

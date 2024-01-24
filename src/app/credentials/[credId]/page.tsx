@@ -5,7 +5,7 @@ import { EvmContractConditions, AccessControlConditions } from "@lit-protocol/ty
 import { Card, Text } from "@radix-ui/themes";
 import axios from "axios";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   useAccount,
@@ -22,6 +22,8 @@ import { postToIPFS } from "@/utils/ipfs";
 
 import lit from "./lit";
 import Steps from "./steps";
+import { useRouter } from "next/navigation";
+import { availableCreds } from "@/availableCred";
 
 interface Credential {
   issuer: string;
@@ -59,16 +61,18 @@ export default function CredentialPage() {
   const [credential, setCredential] = useState<Credential>();
   const [initialProfile, setInitialProfile] = useState<any>({});
   const [transactionHash, setTransactionHash] = useState<string>();
+  const { credId } = useParams<{ credId: string }>();
+
+  if (!Object.hasOwn(availableCreds, credId)) {
+    return <div>Credential Not Found</div>;
+  }
 
   useEffect(() => {
     const params = new URLSearchParams();
-    params.set("client_id", env.NEXT_PUBLIC_GITHUB_OAUTH_CLIENT_ID);
-    params.set("scope", "read:user");
+    params.set("client_id", availableCreds[credId].clientId);
+    params.set("scope", availableCreds[credId].scope);
     params.set("redirect_url", window.location.origin + window.location.pathname);
-
-    console.log(`https://github.com/login/oauth/authorize?${params.toString()}`);
-
-    setConnectionUrl(`https://github.com/login/oauth/authorize?${params.toString()}`);
+    setConnectionUrl(`${availableCreds[credId].authenticationUrl}?${params.toString()}`);
   }, []);
 
   useEffect(() => {
@@ -80,7 +84,7 @@ export default function CredentialPage() {
       try {
         const {
           data: { credential: _credential },
-        } = await axios.post(`/api/credentials/github`, { code, address });
+        } = await axios.post(`/api/credentials/${credId}`, { code, address });
         setCredential(_credential);
 
         setStepId(2);
@@ -284,7 +288,7 @@ export default function CredentialPage() {
                 className="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700"
                 aria-current="page"
               >
-                Github Credential
+                {availableCreds[credId].name} Credential
               </span>
             </div>
           </li>
@@ -315,7 +319,7 @@ export default function CredentialPage() {
                 type="button"
                 className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
               >
-                Connect with Github
+                Connect with {availableCreds[credId].name}
               </a>
             </div>
           ) : (

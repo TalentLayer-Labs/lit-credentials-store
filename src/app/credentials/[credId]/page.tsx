@@ -22,6 +22,7 @@ import StepsTabs from "@/components/steps-tabs";
 import { env } from "@/env.mjs";
 import { postToIPFS } from "@/utils/ipfs";
 import lit from "@/utils/lit-utils/lit";
+import { generateUUIDwithTimestamp } from "@/utils/uuid";
 
 export default function CredentialPage() {
   const [stepId, setStepId] = useState(1);
@@ -197,6 +198,7 @@ export default function CredentialPage() {
     const newCredential = structuredClone(credential);
     delete newCredential.credential.claims;
     newCredential.credential.claimsEncrypted = {
+      id: generateUUIDwithTimestamp(),
       ...data,
       total: credential.credential.claims?.length || 0,
       condition: accessControlConditions,

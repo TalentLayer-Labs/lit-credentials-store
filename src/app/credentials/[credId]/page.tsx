@@ -116,19 +116,18 @@ export default function CredentialPage() {
   // Generated with : https://lit-share-modal-v3-playground.netlify.app/
   const accessControlConditions: AccessControlConditions = [
     {
-      "conditionType": "evmBasic",
-      "contractAddress": env.NEXT_PUBLIC_DID_ADDRESS,
-      "standardContractType": "ERC20",
-      "chain": env.NEXT_PUBLIC_CHAIN == "testnet" ? "mumbai" : "polygon",
-      "method": "balanceOf",
-      "parameters": [
-          ":userAddress"
-      ],
-      "returnValueTest": {
-          "comparator": ">=",
-          "value": "1"
-      }
-  }];
+      conditionType: "evmBasic",
+      contractAddress: env.NEXT_PUBLIC_DID_ADDRESS,
+      standardContractType: "ERC20",
+      chain: env.NEXT_PUBLIC_CHAIN == "testnet" ? "mumbai" : "polygon",
+      method: "balanceOf",
+      parameters: [":userAddress"],
+      returnValueTest: {
+        comparator: ">=",
+        value: "1",
+      },
+    },
+  ];
 
   useEffect(() => {
     (async () => {
@@ -179,8 +178,12 @@ export default function CredentialPage() {
         c.credential.author !== credential.credential.author ||
         c.credential.platform !== credential.credential.platform,
     );
-    const newCredential = structuredClone(credential);
+    // Ensure id uniqueness
+    const newCredential = {...credential};
+    newCredential.id = generateUUIDwithTimestamp();
+    newCredential.credential.id = generateUUIDwithTimestamp();
     delete newCredential.credential.claims;
+
     newCredential.credential.claimsEncrypted = {
       id: generateUUIDwithTimestamp(),
       ...data,
@@ -205,7 +208,21 @@ export default function CredentialPage() {
         c.credential.author !== credential.credential.author ||
         c.credential.platform !== credential.credential.platform,
     );
-    profileData.credentials.push(credential);
+
+    // Ensure id uniqueness
+    const newCredential = {...credential};
+    newCredential.id = generateUUIDwithTimestamp();
+    newCredential.credential.id = generateUUIDwithTimestamp();
+    delete newCredential.credential.claimsEncrypted;
+
+    // Stringify complex values
+    newCredential.credential.claims?.map((claim) => {
+      claim.id = generateUUIDwithTimestamp();
+      if (typeof claim.value !== "string") {
+        claim.value = JSON.stringify(claim.value);
+      }
+    });
+    profileData.credentials.push(newCredential);
     const cid = await postToIPFS(JSON.stringify(profileData));
     setNewCid(cid);
   }

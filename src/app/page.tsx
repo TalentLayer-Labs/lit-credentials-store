@@ -4,7 +4,7 @@ import { Box, Grid, TextFieldInput, TextFieldRoot, TextFieldSlot } from "@radix-
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { availableCreds } from "@/availableCred";
+import { availableCreds } from "@/available-cred";
 
 export default function Home() {
   const router = useRouter();

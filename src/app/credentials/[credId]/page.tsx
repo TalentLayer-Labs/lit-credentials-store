@@ -1,7 +1,7 @@
 "use client";
 
 import { HomeIcon } from "@heroicons/react/24/solid";
-import { EvmContractConditions } from "@lit-protocol/types";
+import { AccessControlConditions } from "@lit-protocol/types";
 import { Card, Text } from "@radix-ui/themes";
 import axios from "axios";
 import Link from "next/link";
@@ -22,6 +22,7 @@ import StepsTabs from "@/components/steps-tabs";
 import { env } from "@/env.mjs";
 import { postToIPFS } from "@/utils/ipfs";
 import lit from "@/utils/lit-utils/lit";
+import { generateUUIDwithTimestamp } from "@/utils/uuid";
 
 export default function CredentialPage() {
   const [stepId, setStepId] = useState(1);
@@ -35,17 +36,16 @@ export default function CredentialPage() {
   const [transactionHash, setTransactionHash] = useState<string>();
   const { credId } = useParams<{ credId: string }>();
 
-  if (!Object.hasOwn(availableCreds, credId)) {
-    return <div>Credential Not Found</div>;
-  }
-
   useEffect(() => {
+    if (!Object.hasOwn(availableCreds, credId)) {
+      return;
+    }
     const params = new URLSearchParams();
     params.set("client_id", availableCreds[credId].clientId);
     params.set("scope", availableCreds[credId].scope);
     params.set("redirect_url", window.location.origin + window.location.pathname);
     setConnectionUrl(`${availableCreds[credId].authenticationUrl}?${params.toString()}`);
-  }, []);
+  }, [credId]);
 
   useEffect(() => {
     if (!code || !address) return;
@@ -66,7 +66,7 @@ export default function CredentialPage() {
         setLoading(false);
       }
     })();
-  }, [code, address]);
+  }, [code, address, credId]);
 
   const { data: client } = useWalletClient();
 
@@ -111,36 +111,19 @@ export default function CredentialPage() {
 
   console.log(initialProfile);
 
-  const accessControlConditions: EvmContractConditions = [
+  // This access control condition check if the user balance of the following contract (TalentLayerId) is >= 1
+  // Generated with : https://lit-share-modal-v3-playground.netlify.app/
+  const accessControlConditions: AccessControlConditions = [
     {
-      conditionType: "evmContract",
+      conditionType: "evmBasic",
       contractAddress: env.NEXT_PUBLIC_DID_ADDRESS,
-      functionName: "balanceOf",
-      functionParams: [":userAddress"],
-      functionAbi: {
-        type: "function",
-        stateMutability: "view",
-        outputs: [
-          {
-            type: "uint256",
-            name: "",
-            internalType: "uint256",
-          },
-        ],
-        name: "balanceOf",
-        inputs: [
-          {
-            type: "address",
-            name: "account",
-            internalType: "address",
-          },
-        ],
-      },
+      standardContractType: "ERC20",
       chain: env.NEXT_PUBLIC_CHAIN == "testnet" ? "mumbai" : "polygon",
+      method: "balanceOf",
+      parameters: [":userAddress"],
       returnValueTest: {
-        key: "",
-        comparator: ">",
-        value: "0",
+        comparator: ">=",
+        value: "1",
       },
     },
   ];
@@ -194,12 +177,17 @@ export default function CredentialPage() {
         c.credential.author !== credential.credential.author ||
         c.credential.platform !== credential.credential.platform,
     );
-    const newCredential = structuredClone(credential);
+    // Ensure id uniqueness
+    const newCredential = {...credential};
+    newCredential.id = generateUUIDwithTimestamp();
+    newCredential.credential.id = generateUUIDwithTimestamp();
     delete newCredential.credential.claims;
+
     newCredential.credential.claimsEncrypted = {
+      id: generateUUIDwithTimestamp(),
       ...data,
       total: credential.credential.claims?.length || 0,
-      condition: accessControlConditions,
+      condition: JSON.stringify(accessControlConditions), // saved as json for easy storage in ipfs - no need to define a new type
     };
     profileData.credentials.push(newCredential);
     const cid = await postToIPFS(JSON.stringify(profileData));
@@ -219,7 +207,21 @@ export default function CredentialPage() {
         c.credential.author !== credential.credential.author ||
         c.credential.platform !== credential.credential.platform,
     );
-    profileData.credentials.push(credential);
+
+    // Ensure id uniqueness
+    const newCredential = {...credential};
+    newCredential.id = generateUUIDwithTimestamp();
+    newCredential.credential.id = generateUUIDwithTimestamp();
+    delete newCredential.credential.claimsEncrypted;
+
+    // Stringify complex values
+    newCredential.credential.claims?.map((claim) => {
+      claim.id = generateUUIDwithTimestamp();
+      if (typeof claim.value !== "string") {
+        claim.value = JSON.stringify(claim.value);
+      }
+    });
+    profileData.credentials.push(newCredential);
     const cid = await postToIPFS(JSON.stringify(profileData));
     setNewCid(cid);
   }
@@ -231,6 +233,10 @@ export default function CredentialPage() {
         <CreateTalentLayerId />
       </div>
     );
+  }
+
+  if (!Object.hasOwn(availableCreds, credId)) {
+    return <div>Credential Not Found</div>;
   }
 
   return (

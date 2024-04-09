@@ -36,17 +36,16 @@ export default function CredentialPage() {
   const [transactionHash, setTransactionHash] = useState<string>();
   const { credId } = useParams<{ credId: string }>();
 
-  if (!Object.hasOwn(availableCreds, credId)) {
-    return <div>Credential Not Found</div>;
-  }
-
   useEffect(() => {
+    if (!Object.hasOwn(availableCreds, credId)) {
+      return;
+    }
     const params = new URLSearchParams();
     params.set("client_id", availableCreds[credId].clientId);
     params.set("scope", availableCreds[credId].scope);
     params.set("redirect_url", window.location.origin + window.location.pathname);
     setConnectionUrl(`${availableCreds[credId].authenticationUrl}?${params.toString()}`);
-  }, []);
+  }, [credId]);
 
   useEffect(() => {
     if (!code || !address) return;
@@ -67,7 +66,7 @@ export default function CredentialPage() {
         setLoading(false);
       }
     })();
-  }, [code, address]);
+  }, [code, address, credId]);
 
   const { data: client } = useWalletClient();
 
@@ -234,6 +233,10 @@ export default function CredentialPage() {
         <CreateTalentLayerId />
       </div>
     );
+  }
+
+  if (!Object.hasOwn(availableCreds, credId)) {
+    return <div>Credential Not Found</div>;
   }
 
   return (

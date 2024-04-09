@@ -3,8 +3,7 @@ import { ethers } from "ethers";
 
 import { generateUUIDwithTimestamp } from "@/utils/uuid";
 
-import { fetchStats } from "../../route";
-import fetchTopLanguages from "../../route1";
+import { fetchStats, fetchTopLanguages } from "../../route";
 
 interface Claim {
   id: string;

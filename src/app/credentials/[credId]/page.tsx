@@ -16,7 +16,7 @@ import {
 } from "wagmi";
 
 import { talentlayerIdABI } from "@/abis/talentlayer-id";
-import { availableCreds } from "@/availableCred";
+import { availableCreds } from "@/available-cred";
 import { CreateTalentLayerId } from "@/components/create-talent-layer-id";
 import StepsTabs from "@/components/steps-tabs";
 import { env } from "@/env.mjs";

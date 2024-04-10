@@ -30,11 +30,7 @@ async function createCredential(userAddress: string, claims: Claim[]) {
   const currentTimestamp = (new Date().getTime() / 1000) | 0;
   const expiryTimestamp = currentTimestamp + 30 * 24 * 60 * 60;
 
-  console.log(currentTimestamp);
-
   const signer = new ethers.Wallet(signerPrivateKey);
-
-  console.log(signer);
 
   const credential: Credential = {
     id: generateUUIDwithTimestamp(),
@@ -47,14 +43,10 @@ async function createCredential(userAddress: string, claims: Claim[]) {
     userAddress,
   };
 
-  console.log(credential);
-
-  const credentialHash1 = ethers.utils.hashMessage(JSON.stringify(credential));
-  console.log(credentialHash1);
-  const signature1 = await signer.signMessage(credentialHash1);
-  console.log(signature1);
-
   credential.claims = claims;
+  
+  const credentialHash1 = ethers.utils.hashMessage(JSON.stringify(credential));
+  const signature1 = await signer.signMessage(credentialHash1);
 
   const credentialHash2 = ethers.utils.hashMessage(JSON.stringify(credential));
   const signature2 = await signer.signMessage(credentialHash2);
@@ -68,7 +60,7 @@ async function createCredential(userAddress: string, claims: Claim[]) {
   };
 }
 
-async function generateClaims(token: string) {
+async function createClaims(token: string) {
   let claims: Claim[] = [];
 
   const options = {
@@ -76,8 +68,6 @@ async function generateClaims(token: string) {
       Authorization: `Bearer ${token}`,
     },
   };
-
-  console.log(token);
 
   const { data: userData } = await axios.get("https://api.github.com/user", options);
 
@@ -125,7 +115,6 @@ async function generateClaims(token: string) {
     }
   }
 
-  // TODO: experience one now
   const topLanguages = await fetchTopLanguages(userData.login, token);
 
   const top5Languages = Object.keys(topLanguages).slice(0, 5);
@@ -173,26 +162,11 @@ export async function POST(request: Request) {
 
     if (data.error) return Response.json({ data }, { status: 400 });
 
-    console.log("A");
-
-    // TODO: create credentials here
-    const claims = await generateClaims(data.access_token);
-    console.log("A");
+    const claims = await createClaims(data.access_token);
     const credential = await createCredential(userAddress, claims);
-    console.log("C");
 
     return Response.json({ credential });
   } catch (e: any) {
     return Response.json({ data: e }, { status: 500 });
   }
 }
-
-// const stats = await fetchStats(
-//   username,
-//   parseBoolean(include_all_commits),
-//   parseArray(exclude_repo),
-//   showStats.includes("prs_merged") ||
-//     showStats.includes("prs_merged_percentage"),
-//   showStats.includes("discussions_started"),
-//   showStats.includes("discussions_answered"),
-// );

@@ -21,7 +21,7 @@ import { CreateTalentLayerId } from "@/components/create-talent-layer-id";
 import StepsTabs from "@/components/steps-tabs";
 import { env } from "@/env.mjs";
 import { postToIPFS } from "@/utils/ipfs";
-import lit from "@/utils/lit-utils/lit";
+import { lit } from "@/utils/lit-utils/lit";
 import { generateUUIDwithTimestamp } from "@/utils/uuid";
 
 export default function CredentialPage() {
@@ -322,7 +322,7 @@ export default function CredentialPage() {
                 <button onClick={save} className="btn btn-primary mt-4">
                   Save
                 </button>
-                <button onClick={encrypt} className="ml-4 mt-4 btn btn-secondary">
+                <button onClick={encrypt} className="btn btn-secondary ml-4 mt-4">
                   Encrypt & Save
                 </button>
               </div>

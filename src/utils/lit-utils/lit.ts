@@ -56,4 +56,4 @@ class Lit {
 
 const lit = new Lit();
 
-export default lit;
+export { lit };

@@ -19,14 +19,6 @@ const GRAPHQL_REPOS_FIELD = `
   }
 `;
 
-const GRAPHQL_REPOS_QUERY = `
-  query userInfo($login: String!, $after: String) {
-    user(login: $login) {
-      ${GRAPHQL_REPOS_FIELD}
-    }
-  }
-`;
-
 const GRAPHQL_STATS_QUERY = `
   query userInfo($login: String!, $after: String, $includeMergedPullRequests: Boolean!, $includeDiscussions: Boolean!, $includeDiscussionsAnswers: Boolean!) {
     user(login: $login) {
@@ -65,27 +57,27 @@ const GRAPHQL_STATS_QUERY = `
   }
 `;
 
-// const GRAPHQL_TOP_LANGUAGES_QUERY = `
-//   query userInfo($login: String!) {
-//     user(login: $login) {
-//       # fetch only owner repos & not forks
-//       repositories(ownerAffiliations: OWNER, isFork: false, first: 100) {
-//         nodes {
-//           name
-//           languages(first: 10, orderBy: {field: SIZE, direction: DESC}) {
-//             edges {
-//               size
-//               node {
-//                 color
-//                 name
-//               }
-//             }
-//           }
-//         }
-//       }
-//     }
-//   }
-// `;
+const GRAPHQL_TOP_LANGUAGES_QUERY = `
+  query userInfo($login: String!) {
+    user(login: $login) {
+      # fetch only owner repos & not forks
+      repositories(ownerAffiliations: OWNER, isFork: false, first: 100) {
+        nodes {
+          name
+          languages(first: 10, orderBy: {field: SIZE, direction: DESC}) {
+            edges {
+              size
+              node {
+                color
+                name
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
 
 /**
  * @typedef {import('axios').AxiosResponse} AxiosResponse Axios response.
@@ -94,14 +86,12 @@ const GRAPHQL_STATS_QUERY = `
 /**
  * Stats fetcher object.
  *
+ * @param {string} query The graphql query.
  * @param {object} variables Fetcher variables.
  * @param {string} token GitHub token.
  * @returns {Promise<AxiosResponse>} Axios response.
  */
-// const fetcher = (query:string, variables: any, token: string) => {
-const fetcher = (variables: any, token: string) => { // TODO: pass query as a parameter
-  const query = variables.after ? GRAPHQL_REPOS_QUERY : GRAPHQL_STATS_QUERY;
-  console.log(query)
+const graphqlFetcher = (query:string, variables: any, token: string) => {
   return request(
     {
       query,
@@ -142,8 +132,7 @@ const statsFetcher = async (
       includeDiscussions,
       includeDiscussionsAnswers,
     };
-    // let res = await fetcher(GRAPHQL_REPOS_QUERY, variables, token);
-    let res = await fetcher(variables, token);
+    let res = await graphqlFetcher(GRAPHQL_STATS_QUERY, variables, token);
     if (res.data.errors) {
       return res;
     }
@@ -310,38 +299,6 @@ export const fetchStats = async (
   return stats;
 };
 
-const TopLfetcher = (variables: any, token: string) => {
-  return request(
-    {
-      query: `
-      query userInfo($login: String!) {
-        user(login: $login) {
-          # fetch only owner repos & not forks
-          repositories(ownerAffiliations: OWNER, isFork: false, first: 100) {
-            nodes {
-              name
-              languages(first: 10, orderBy: {field: SIZE, direction: DESC}) {
-                edges {
-                  size
-                  node {
-                    color
-                    name
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      `,
-      variables,
-    },
-    {
-      Authorization: `token ${token}`,
-    },
-  );
-};
-
 /**
  * Fetch top languages for a given username.
  *
@@ -358,8 +315,7 @@ export const fetchTopLanguages = async (
   size_weight: number = 1,
   count_weight: number = 0,
 ) => {
-  // const res = await fetcher(GRAPHQL_TOP_LANGUAGES_QUERY, { login: username }, token);
-  const res = await TopLfetcher({ login: username }, token);
+  const res = await graphqlFetcher(GRAPHQL_TOP_LANGUAGES_QUERY, { login: username }, token);
 
   if (res.data.errors) {
     logger.error(res.data.errors);

@@ -1,7 +1,8 @@
 "use client";
 
+import * as LitJsSdk from "@lit-protocol/lit-node-client";
 import { HomeIcon } from "@heroicons/react/24/solid";
-import { AccessControlConditions } from "@lit-protocol/types";
+import { AccessControlConditions, AuthSig } from "@lit-protocol/types";
 import { Card, Text } from "@radix-ui/themes";
 import axios from "axios";
 import Link from "next/link";
@@ -23,6 +24,7 @@ import { env } from "@/env.mjs";
 import { postToIPFS } from "@/utils/ipfs";
 import { lit } from "@/utils/lit-utils/lit";
 import { generateUUIDwithTimestamp } from "@/utils/uuid";
+import { signAndSaveAuthMessage } from "@/utils/lit-utils/signature";
 
 export default function CredentialPage() {
   const [stepId, setStepId] = useState(1);
@@ -35,6 +37,7 @@ export default function CredentialPage() {
   const [initialProfile, setInitialProfile] = useState<any>({});
   const [transactionHash, setTransactionHash] = useState<string>();
   const { credId } = useParams<{ credId: string }>();
+  const { data: client } = useWalletClient();
 
   useEffect(() => {
     if (!Object.hasOwn(availableCreds, credId)) {
@@ -48,16 +51,36 @@ export default function CredentialPage() {
   }, [credId]);
 
   useEffect(() => {
-    if (!code || !address) return;
+    console.log("credId = ", credId);
+    if (!address || !client) {
+      // TODO: set error message
+      console.log("you have to connect your wallet");
+    }
+    if (!code || !address || !client) return;
 
     (async () => {
       setLoading(true);
 
       try {
-        const {
-          data: { credential: _credential },
-        } = await axios.post(`/api/credentials/${credId}`, { code, address });
-        setCredential(_credential);
+        // Get github access key
+        const { data } = await axios.post(`/api/credentials/${credId}`, { code, address });
+        const access_token = data.data.access_token;
+
+        // get user signature
+        let authSig = await signAndSaveAuthMessage({
+          web3: client,
+          expiration: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
+        });
+
+        // get credentials from serverless lit action
+        const credential = await initLitAction(access_token, client.account.address, authSig);
+
+        console.log("data = ", data);
+        console.log("authSig = ", authSig);
+        console.log("client = ", client);
+        console.log("credential = ", credential);
+
+        // setCredential(credential);
 
         setStepId(2);
       } catch (e) {
@@ -66,9 +89,7 @@ export default function CredentialPage() {
         setLoading(false);
       }
     })();
-  }, [code, address, credId]);
-
-  const { data: client } = useWalletClient();
+  }, [code, address, credId, client]);
 
   const { data: id } = useContractRead(
     address
@@ -118,7 +139,7 @@ export default function CredentialPage() {
       conditionType: "evmBasic",
       contractAddress: env.NEXT_PUBLIC_DID_ADDRESS,
       standardContractType: "ERC20",
-      chain: env.NEXT_PUBLIC_CHAIN == "testnet" ? "mumbai" : "polygon",
+      chain: env.NEXT_PUBLIC_CHAIN == "testnet" ? "amoy" : "polygon",
       method: "balanceOf",
       parameters: [":userAddress"],
       returnValueTest: {
@@ -158,20 +179,42 @@ export default function CredentialPage() {
     })().catch((err) => console.error(err));
   }, [newCid, writeAsync]);
 
-  async function encrypt() {
-    if (!client || !credential) return;
+  async function initLitAction(githubAccessToken: string, userAddress: string, authSig: AuthSig) {
+    console.log(githubAccessToken, userAddress, authSig);
 
-    const data = await lit.encrypt(
-      client,
-      accessControlConditions,
-      JSON.stringify(credential.credential.claims),
-    );
+    const litActionCode = `
+      const go = async () => {  
+        // this requests a signature share from the Lit Node
+        // the signature share will be automatically returned in the HTTP response from the node
+        // all the params (toSign, publicKey, sigName) are passed in from the LitJsSdk.executeJs() function
+        console.log(githubAccessToken)
+        const sigShare = await Lit.Actions.signEcdsa({ toSign, publicKey , sigName });
+        LitActions.setResponse({response: JSON.stringify({hello: 'world'})});
+      };
 
-    // fetch the file from ipfs
-    const profileData = { ...initialProfile };
-    if (!profileData.credentials?.length) {
-      profileData.credentials = [];
-    }
+      go();
+    `;
+
+    // TODO: replace with your own pkp
+    const pkp = "0x040a758fb8ef6104a8db7a44d7ae96c72d451676d7b162d23ac9919423d8fd0e5078f0c558f9a772af5876b315329145eacc47ed7266f93210c458f90272099656";
+    const sigName = "sig1";
+
+    const signatures = await lit.litNodeClient.executeJs({
+      code: litActionCode,
+      authSig,
+      // all jsParams can be used anywhere in your litActionCode
+      jsParams: {
+        publicKey: pkp,
+        sigName,
+        githubAccessToken,
+        userAddress,
+      },
+    });
+
+    console.log(signatures);
+
+    return signatures;
+  }
     profileData.credentials = profileData.credentials.filter(
       (c: any) =>
         c.credential.author !== credential.credential.author ||

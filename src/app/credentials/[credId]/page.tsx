@@ -1,10 +1,10 @@
 "use client";
 
-import * as LitJsSdk from "@lit-protocol/lit-node-client";
 import { HomeIcon } from "@heroicons/react/24/solid";
 import { AccessControlConditions, AuthSig } from "@lit-protocol/types";
 import { Card, Text } from "@radix-ui/themes";
 import axios from "axios";
+import { ethers } from "ethers";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -23,8 +23,8 @@ import StepsTabs from "@/components/steps-tabs";
 import { env } from "@/env.mjs";
 import { postToIPFS } from "@/utils/ipfs";
 import { lit } from "@/utils/lit-utils/lit";
-import { generateUUIDwithTimestamp } from "@/utils/uuid";
 import { signAndSaveAuthMessage } from "@/utils/lit-utils/signature";
+import { generateUUIDwithTimestamp } from "@/utils/uuid";
 
 export default function CredentialPage() {
   const [stepId, setStepId] = useState(1);
@@ -73,14 +73,17 @@ export default function CredentialPage() {
         });
 
         // get credentials from serverless lit action
-        const credential = await initLitAction(access_token, client.account.address, authSig);
+        const {signatures, response } = await initLitAction(access_token, client.account.address, authSig);
+        const responseObject = response as any; // used to fix type error
 
-        console.log("data = ", data);
-        console.log("authSig = ", authSig);
-        console.log("client = ", client);
-        console.log("credential = ", credential);
+        const credential: Credential = {
+          id: responseObject.id,
+          credential: responseObject.credential,
+          signature1: signatures.sig1,
+          issuer: 'Lit Protocol',
+        } as Credential;
 
-        // setCredential(credential);
+        setCredential(credential);
 
         setStepId(2);
       } catch (e) {
@@ -130,8 +133,6 @@ export default function CredentialPage() {
     })();
   }, [profile]);
 
-  console.log(initialProfile);
-
   // This access control condition check if the user balance of the following contract (TalentLayerId) is >= 1
   // Generated with : https://lit-share-modal-v3-playground.netlify.app/
   const accessControlConditions: AccessControlConditions = [
@@ -180,30 +181,14 @@ export default function CredentialPage() {
   }, [newCid, writeAsync]);
 
   async function initLitAction(githubAccessToken: string, userAddress: string, authSig: AuthSig) {
-    console.log(githubAccessToken, userAddress, authSig);
-
-    const litActionCode = `
-      const go = async () => {  
-        // this requests a signature share from the Lit Node
-        // the signature share will be automatically returned in the HTTP response from the node
-        // all the params (toSign, publicKey, sigName) are passed in from the LitJsSdk.executeJs() function
-        console.log(githubAccessToken)
-        const sigShare = await Lit.Actions.signEcdsa({ toSign, publicKey , sigName });
-        LitActions.setResponse({response: JSON.stringify({hello: 'world'})});
-      };
-
-      go();
-    `;
-
     // TODO: replace with your own pkp
     const pkp = "0x040a758fb8ef6104a8db7a44d7ae96c72d451676d7b162d23ac9919423d8fd0e5078f0c558f9a772af5876b315329145eacc47ed7266f93210c458f90272099656";
     const sigName = "sig1";
-
     const signatures = await lit.litNodeClient.executeJs({
-      code: litActionCode,
+      ipfsId: "QmcXYYmWeber2w6xwrRbMPFmrdSQ4zFg4dBjmStAcM32Ln",
       authSig,
-      // all jsParams can be used anywhere in your litActionCode
       jsParams: {
+        toSign: ethers.utils.arrayify(ethers.utils.keccak256(ethers.utils.toUtf8Bytes("Hello world"))),
         publicKey: pkp,
         sigName,
         githubAccessToken,
@@ -211,10 +196,23 @@ export default function CredentialPage() {
       },
     });
 
-    console.log(signatures);
-
     return signatures;
   }
+
+  async function encrypt() {
+    if (!client || !credential) return;
+
+    const data = await lit.encrypt(
+      client,
+      accessControlConditions,
+      JSON.stringify(credential.credential.claims),
+    );
+
+    // fetch the file from ipfs
+    const profileData = { ...initialProfile };
+    if (!profileData.credentials?.length) {
+      profileData.credentials = [];
+    }
     profileData.credentials = profileData.credentials.filter(
       (c: any) =>
         c.credential.author !== credential.credential.author ||

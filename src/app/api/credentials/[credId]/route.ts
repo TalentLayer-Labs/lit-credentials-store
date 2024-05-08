@@ -4,6 +4,7 @@ import { ethers } from "ethers";
 import { generateUUIDwithTimestamp } from "@/utils/uuid";
 
 import { fetchStats, fetchTopLanguages } from "../../route";
+import { IS_USING_LIT_ACTION } from "@/constants/config";
 
 interface Claim {
   id: string;
@@ -161,6 +162,11 @@ export async function POST(request: Request) {
     );
 
     if (data.error) return Response.json({ data }, { status: 400 });
+
+    // just return the github access token
+    if (IS_USING_LIT_ACTION) {
+      return Response.json({ data });
+    }
 
     const claims = await createClaims(data.access_token);
     const credential = await createCredential(userAddress, claims);

@@ -1,0 +1,1 @@
+export const IS_USING_LIT_ACTION = true; // else = nextjs query

@@ -1,10 +1,10 @@
 import axios from "axios";
 import { ethers } from "ethers";
 
+import { IS_USING_LIT_ACTION } from "@/constants/config";
 import { generateUUIDwithTimestamp } from "@/utils/uuid";
 
 import { fetchStats, fetchTopLanguages } from "../../route";
-import { IS_USING_LIT_ACTION } from "@/constants/config";
 
 interface Claim {
   id: string;

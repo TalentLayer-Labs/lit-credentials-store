@@ -1,7 +1,7 @@
 "use client";
 
 import { HomeIcon } from "@heroicons/react/24/solid";
-import { AccessControlConditions, AuthSig } from "@lit-protocol/types";
+import { AccessControlConditions, AuthSig, ExecuteJsResponse } from "@lit-protocol/types";
 import { Card, Text } from "@radix-ui/themes";
 import axios from "axios";
 import { ethers } from "ethers";
@@ -25,6 +25,7 @@ import { postToIPFS } from "@/utils/ipfs";
 import { lit } from "@/utils/lit-utils/lit";
 import { signAndSaveAuthMessage } from "@/utils/lit-utils/signature";
 import { generateUUIDwithTimestamp } from "@/utils/uuid";
+import { FIXED_PKP } from "@/constants/config";
 
 export default function CredentialPage() {
   const [stepId, setStepId] = useState(1);
@@ -73,7 +74,7 @@ export default function CredentialPage() {
         });
 
         // get credentials from serverless lit action
-        const {signatures, response } = await initLitAction(access_token, client.account.address, authSig);
+        const {signatures, response } = await initLitAction(access_token, client.account.address, authSig) as ExecuteJsResponse;
         const responseObject = response as any; // used to fix type error
 
         const credential: Credential = {
@@ -181,11 +182,12 @@ export default function CredentialPage() {
   }, [newCid, writeAsync]);
 
   async function initLitAction(githubAccessToken: string, userAddress: string, authSig: AuthSig) {
-    // TODO: replace with your own pkp
-    const pkp = "0x040a758fb8ef6104a8db7a44d7ae96c72d451676d7b162d23ac9919423d8fd0e5078f0c558f9a772af5876b315329145eacc47ed7266f93210c458f90272099656";
+    if (!client) return;
+    // Use the admin pkp if defined or ask the user to mint a new one
+    const pkp = FIXED_PKP ? FIXED_PKP : (await lit.mintPkp(client)).publicKey;
     const sigName = "sig1";
     const signatures = await lit.litNodeClient.executeJs({
-      ipfsId: "QmcXYYmWeber2w6xwrRbMPFmrdSQ4zFg4dBjmStAcM32Ln",
+      ipfsId: "QmazLt86rcD6dqPpfRL3HL2kW1qVnaETvsLrP8wgkBkEfF",
       authSig,
       jsParams: {
         toSign: ethers.utils.arrayify(ethers.utils.keccak256(ethers.utils.toUtf8Bytes("Hello world"))),

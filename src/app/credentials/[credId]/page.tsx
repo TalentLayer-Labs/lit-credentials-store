@@ -20,12 +20,12 @@ import { talentlayerIdABI } from "@/abis/talentlayer-id";
 import { availableCreds } from "@/available-cred";
 import { CreateTalentLayerId } from "@/components/create-talent-layer-id";
 import StepsTabs from "@/components/steps-tabs";
+import { FIXED_PKP } from "@/constants/config";
 import { env } from "@/env.mjs";
 import { postToIPFS } from "@/utils/ipfs";
 import { lit } from "@/utils/lit-utils/lit";
 import { signAndSaveAuthMessage } from "@/utils/lit-utils/signature";
 import { generateUUIDwithTimestamp } from "@/utils/uuid";
-import { FIXED_PKP } from "@/constants/config";
 
 export default function CredentialPage() {
   const [stepId, setStepId] = useState(1);
@@ -187,7 +187,7 @@ export default function CredentialPage() {
     const pkp = FIXED_PKP ? FIXED_PKP : (await lit.mintPkp(client)).publicKey;
     const sigName = "sig1";
     const signatures = await lit.litNodeClient.executeJs({
-      ipfsId: "QmazLt86rcD6dqPpfRL3HL2kW1qVnaETvsLrP8wgkBkEfF",
+      ipfsId: "QmTD4B6hQ21ft7tfztiPfwthAq5npfh8Ae3btYozcdDuiY",
       authSig,
       jsParams: {
         toSign: ethers.utils.arrayify(ethers.utils.keccak256(ethers.utils.toUtf8Bytes("Hello world"))),
@@ -289,7 +289,7 @@ export default function CredentialPage() {
           <li className="flex">
             <div className="flex items-center">
               <Link href="/" className="text-gray-400 hover:text-gray-500">
-                <HomeIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                <HomeIcon className="size-5 shrink-0" aria-hidden="true" />
                 <span className="sr-only">Home</span>
               </Link>
             </div>

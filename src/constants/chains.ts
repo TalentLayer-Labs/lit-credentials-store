@@ -38,7 +38,7 @@ const getChain = () => {
     case "testnet":
       return polygonAmoy;
     case "mainnet":
-      throw polygon;
+      return polygon;
     default:
       throw new Error("Invalid NEXT_PUBLIC_CHAIN value");
   }

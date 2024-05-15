@@ -11,7 +11,8 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "postbuild": "next-sitemap",
-    "generate-types": "export $(grep 'SUPABASE_PROJECT_REF' .env.local | xargs) && npx supabase gen types typescript --project-id $SUPABASE_PROJECT_REF --schema public > src/types/supabase.ts"
+    "generate-types": "export $(grep 'SUPABASE_PROJECT_REF' .env.local | xargs) && npx supabase gen types typescript --project-id $SUPABASE_PROJECT_REF --schema public > src/types/supabase.ts",
+    "generate-litaction": "node ./src/utils/lit-utils/0-lit-action-merge.js"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",

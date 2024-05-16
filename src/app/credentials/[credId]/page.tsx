@@ -1,10 +1,9 @@
 "use client";
 
 import { HomeIcon } from "@heroicons/react/24/solid";
-import { AccessControlConditions, AuthSig, ExecuteJsResponse } from "@lit-protocol/types";
+import { AccessControlConditions } from "@lit-protocol/types";
 import { Card, Text } from "@radix-ui/themes";
 import axios from "axios";
-import { ethers } from "ethers";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -20,11 +19,11 @@ import { talentlayerIdABI } from "@/abis/talentlayer-id";
 import { availableCreds } from "@/available-cred";
 import { CreateTalentLayerId } from "@/components/create-talent-layer-id";
 import StepsTabs from "@/components/steps-tabs";
-import { FIXED_PKP } from "@/constants/config";
 import { env } from "@/env.mjs";
+import { CredentialService } from "@/services/CredentialService";
+import { GitHubService } from "@/services/GitHubService";
 import { postToIPFS } from "@/utils/ipfs";
 import { lit } from "@/utils/lit-utils/lit";
-import { signAndSaveAuthMessage } from "@/utils/lit-utils/signature";
 import { generateUUIDwithTimestamp } from "@/utils/uuid";
 
 export default function CredentialPage() {
@@ -40,6 +39,13 @@ export default function CredentialPage() {
   const { credId } = useParams<{ credId: string }>();
   const { data: client } = useWalletClient();
 
+  let service: CredentialService | null = null;
+
+  if (credId && availableCreds[credId]) {
+    const { clientId, scope, authenticationUrl } = availableCreds[credId];
+    service = new GitHubService(clientId, scope, authenticationUrl, credId);
+  }
+
   useEffect(() => {
     if (!Object.hasOwn(availableCreds, credId)) {
       return;
@@ -52,40 +58,19 @@ export default function CredentialPage() {
   }, [credId]);
 
   useEffect(() => {
-    console.log("credId = ", credId);
-    if (!address || !client) {
-      // TODO: set error message
-      console.log("you have to connect your wallet");
+    if (!address || !client || !code || !service) {
+      console.error("You have to connect your wallet");
+      return;
     }
-    if (!code || !address || !client) return;
 
     (async () => {
       setLoading(true);
 
       try {
-        // Get github access key
-        const { data } = await axios.post(`/api/credentials/${credId}`, { code, address });
-        const access_token = data.data.access_token;
+        const accessToken = await service.fetchAccessToken(code, address);
+        const fetchedCredential = await service.fetchCredential(accessToken, address, client);
 
-        // get user signature
-        let authSig = await signAndSaveAuthMessage({
-          web3: client,
-          expiration: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
-        });
-
-        // get credentials from serverless lit action
-        const {signatures, response } = await initLitAction(access_token, client.account.address, authSig) as ExecuteJsResponse;
-        const responseObject = response as any; // used to fix type error
-
-        const credential: Credential = {
-          id: responseObject.id,
-          credential: responseObject.credential,
-          signature1: signatures.sig1,
-          issuer: 'Lit Protocol',
-        } as Credential;
-
-        setCredential(credential);
-
+        setCredential(fetchedCredential);
         setStepId(2);
       } catch (e) {
         console.log(e);
@@ -95,29 +80,21 @@ export default function CredentialPage() {
     })();
   }, [code, address, credId, client]);
 
-  const { data: id } = useContractRead(
-    address
-      ? {
-          abi: talentlayerIdABI,
-          address: env.NEXT_PUBLIC_DID_ADDRESS as `0x${string}`,
-          account: address,
-          args: [address],
-          functionName: "ids",
-        }
-      : undefined,
-  );
+  const { data: id } = useContractRead({
+    abi: talentlayerIdABI,
+    address: env.NEXT_PUBLIC_DID_ADDRESS as `0x${string}`,
+    account: address,
+    args: [address],
+    functionName: "ids",
+  });
 
-  const { data: profile } = useContractRead(
-    id
-      ? {
-          abi: talentlayerIdABI,
-          address: env.NEXT_PUBLIC_DID_ADDRESS as `0x${string}`,
-          account: address,
-          args: [id],
-          functionName: "profiles",
-        }
-      : undefined,
-  );
+  const { data: profile } = useContractRead({
+    abi: talentlayerIdABI,
+    address: env.NEXT_PUBLIC_DID_ADDRESS as `0x${string}`,
+    account: address,
+    args: [id],
+    functionName: "profiles",
+  });
 
   useEffect(() => {
     if (!profile || !(profile as any[])[3]) {
@@ -158,17 +135,13 @@ export default function CredentialPage() {
   }, []);
 
   const [newCid, setNewCid] = useState<string>();
-  const { config } = usePrepareContractWrite(
-    newCid && id
-      ? {
-          abi: talentlayerIdABI,
-          address: env.NEXT_PUBLIC_DID_ADDRESS as `0x${string}`,
-          account: address,
-          args: [id, newCid],
-          functionName: "updateProfileData",
-        }
-      : undefined,
-  );
+  const { config } = usePrepareContractWrite({
+    abi: talentlayerIdABI,
+    address: env.NEXT_PUBLIC_DID_ADDRESS as `0x${string}`,
+    account: address,
+    args: [id, newCid],
+    functionName: "updateProfileData",
+  });
 
   const { writeAsync } = useContractWrite(config);
 
@@ -176,30 +149,14 @@ export default function CredentialPage() {
     if (!newCid || !writeAsync) return;
 
     (async () => {
-      const { hash } = await writeAsync();
-      setTransactionHash(hash);
-    })().catch((err) => console.error(err));
+      try {
+        const { hash } = await writeAsync();
+        setTransactionHash(hash);
+      } catch (err) {
+        console.error(err);
+      }
+    })();
   }, [newCid, writeAsync]);
-
-  async function initLitAction(githubAccessToken: string, userAddress: string, authSig: AuthSig) {
-    if (!client) return;
-    // Use the admin pkp if defined or ask the user to mint a new one
-    const pkp = FIXED_PKP ? FIXED_PKP : (await lit.mintPkp(client)).publicKey;
-    const sigName = "sig1";
-    const signatures = await lit.litNodeClient.executeJs({
-      ipfsId: "QmTD4B6hQ21ft7tfztiPfwthAq5npfh8Ae3btYozcdDuiY",
-      authSig,
-      jsParams: {
-        toSign: ethers.utils.arrayify(ethers.utils.keccak256(ethers.utils.toUtf8Bytes("Hello world"))),
-        publicKey: pkp,
-        sigName,
-        githubAccessToken,
-        userAddress,
-      },
-    });
-
-    return signatures;
-  }
 
   async function encrypt() {
     if (!client || !credential) return;
@@ -221,9 +178,11 @@ export default function CredentialPage() {
         c.credential.platform !== credential.credential.platform,
     );
     // Ensure id uniqueness
-    const newCredential = {...credential};
-    newCredential.id = generateUUIDwithTimestamp();
-    newCredential.credential.id = generateUUIDwithTimestamp();
+    const newCredential = {
+      ...credential,
+      id: generateUUIDwithTimestamp(),
+      credential: { ...credential.credential, id: generateUUIDwithTimestamp() },
+    };
     delete newCredential.credential.claims;
 
     newCredential.credential.claimsEncrypted = {
@@ -252,9 +211,11 @@ export default function CredentialPage() {
     );
 
     // Ensure id uniqueness
-    const newCredential = {...credential};
-    newCredential.id = generateUUIDwithTimestamp();
-    newCredential.credential.id = generateUUIDwithTimestamp();
+    const newCredential = {
+      ...credential,
+      id: generateUUIDwithTimestamp(),
+      credential: { ...credential.credential, id: generateUUIDwithTimestamp() },
+    };
     delete newCredential.credential.claimsEncrypted;
 
     // Stringify complex values
@@ -346,20 +307,18 @@ export default function CredentialPage() {
           ) : (
             <div>
               <div className="my-4 text-xl font-bold">Claims</div>
-              <div className="">
-                <div className="grid grid-cols-3 gap-3">
-                  {credential?.credential.claims?.map((claim) => (
-                    <Card key={claim.criteria} variant="surface" className="">
-                      <Text as="div" size="2" weight="bold">
-                        {claim.criteria}
-                      </Text>
-                      <Text as="div" color="gray" size="2">
-                        {claim.condition}{" "}
-                        {Array.isArray(claim.value) ? `[${claim.value.join(", ")}]` : claim.value}
-                      </Text>
-                    </Card>
-                  ))}
-                </div>
+              <div className="grid grid-cols-3 gap-3">
+                {credential?.credential.claims?.map((claim) => (
+                  <Card key={claim.criteria} variant="surface">
+                    <Text as="div" size="2" weight="bold">
+                      {claim.criteria}
+                    </Text>
+                    <Text as="div" color="gray" size="2">
+                      {claim.condition}{" "}
+                      {Array.isArray(claim.value) ? `[${claim.value.join(", ")}]` : claim.value}
+                    </Text>
+                  </Card>
+                ))}
               </div>
               <div className="text-center">
                 <button onClick={save} className="btn btn-primary mt-4">

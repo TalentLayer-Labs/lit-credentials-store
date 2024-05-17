@@ -82,7 +82,7 @@ export default function CredentialPage() {
 
   const { data: id } = useContractRead({
     abi: talentlayerIdABI,
-    address: env.NEXT_PUBLIC_DID_ADDRESS as `0x${string}`,
+    address: env.NEXT_PUBLIC_TALENTLAYER_DID_ADDRESS as `0x${string}`,
     account: address,
     args: [address],
     functionName: "ids",
@@ -90,7 +90,7 @@ export default function CredentialPage() {
 
   const { data: profile } = useContractRead({
     abi: talentlayerIdABI,
-    address: env.NEXT_PUBLIC_DID_ADDRESS as `0x${string}`,
+    address: env.NEXT_PUBLIC_TALENTLAYER_DID_ADDRESS as `0x${string}`,
     account: address,
     args: [id],
     functionName: "profiles",
@@ -116,7 +116,7 @@ export default function CredentialPage() {
   const accessControlConditions: AccessControlConditions = [
     {
       conditionType: "evmBasic",
-      contractAddress: env.NEXT_PUBLIC_DID_ADDRESS,
+      contractAddress: env.NEXT_PUBLIC_TALENTLAYER_DID_ADDRESS,
       standardContractType: "ERC20",
       chain: env.NEXT_PUBLIC_CHAIN == "testnet" ? "amoy" : "polygon",
       method: "balanceOf",
@@ -137,7 +137,7 @@ export default function CredentialPage() {
   const [newCid, setNewCid] = useState<string>();
   const { config } = usePrepareContractWrite({
     abi: talentlayerIdABI,
-    address: env.NEXT_PUBLIC_DID_ADDRESS as `0x${string}`,
+    address: env.NEXT_PUBLIC_TALENTLAYER_DID_ADDRESS as `0x${string}`,
     account: address,
     args: [id, newCid],
     functionName: "updateProfileData",

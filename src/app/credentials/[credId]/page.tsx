@@ -43,7 +43,11 @@ export default function CredentialPage() {
 
   if (credId && availableCreds[credId]) {
     const { clientId, scope, authenticationUrl } = availableCreds[credId];
-    service = new GitHubService(clientId, scope, authenticationUrl, credId);
+    switch (credId) {
+      case 'github':
+        service = new GitHubService(clientId, scope, authenticationUrl, credId);
+        break;
+    }
   }
 
   useEffect(() => {

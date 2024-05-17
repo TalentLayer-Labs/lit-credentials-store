@@ -36,22 +36,6 @@ class CustomError extends Error {
   static WAKATIME_ERROR = "WAKATIME_ERROR";
 }
 
-/**
- * Encode string as HTML.
- *
- * @see https://stackoverflow.com/a/48073476/10629172
- *
- * @param {string} str String to encode.
- * @returns {string} Encoded string.
- */
-// const encodeHTML = (str: string) => {
-//   return str
-//     .replace(/[\u00A0-\u9999<>&](?!#)/gim, (i) => {
-//       return "&#" + i.charCodeAt(0) + ";";
-//     })
-//     .replace(/\u0008/gim, "");
-// };
-
 const noop = () => {};
 // return console instance based on the environment
 const logger = process.env.NODE_ENV === "test" ? { log: noop, error: noop } : console;

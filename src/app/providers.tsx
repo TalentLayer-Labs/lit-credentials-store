@@ -4,7 +4,7 @@ import { getDefaultWallets, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { ThemeProvider } from "next-themes";
 import { ThemeProviderProps } from "next-themes/dist/types";
 import { WagmiConfig, configureChains, createConfig } from "wagmi";
-import { alchemyProvider } from "wagmi/providers/alchemy";
+import { infuraProvider } from "wagmi/providers/infura";
 import { publicProvider } from "wagmi/providers/public";
 
 import { CHAIN } from "@/constants/chains";
@@ -12,7 +12,7 @@ import { env } from "@/env.mjs";
 
 const { chains, publicClient, webSocketPublicClient } = configureChains(
   [CHAIN],
-  [alchemyProvider({ apiKey: env.NEXT_PUBLIC_ALCHEMY_API_KEY }), publicProvider()],
+  [infuraProvider({ apiKey: env.NEXT_PUBLIC_INFURA_ID }), publicProvider()],
 );
 
 const { connectors } = getDefaultWallets({

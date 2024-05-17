@@ -2,6 +2,7 @@ import { defineChain } from "viem";
 import { hardhat, polygon } from "wagmi/chains";
 
 import { env } from "@/env.mjs";
+import { FIXED_PKP } from "./config";
 
 export const polygonAmoy = defineChain({
   id: 80002,
@@ -31,12 +32,40 @@ export const polygonAmoy = defineChain({
   network: ""
 })
 
+export const litChronicle = defineChain({
+  id: 175177,
+  name: 'Chronicle - Lit Protocol Testnet',
+  nativeCurrency: { name: 'testLPX', symbol: 'testLPX', decimals: 18 },
+  rpcUrls: {
+    default: {
+      http: ['	https://chain-rpc.litprotocol.com/http'],
+    },
+    public: {
+      http: ['	https://chain-rpc.litprotocol.com/http'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'PolygonScan',
+      url: 'https://chain.litprotocol.com/',
+    },
+  },
+  testnet: true,
+  network: ""
+})
+
 const getChain = () => {
   switch (env.NEXT_PUBLIC_CHAIN) {
     case "localhost":
       return hardhat;
     case "testnet":
-      return polygonAmoy;
+      if (FIXED_PKP) {
+        console.log("Using fixed PKP, using amoy chain");
+        return polygonAmoy;
+      } else {
+        console.log("Using fixed PKP, using Lit Chronicle chain. Needed to mint a PKP");
+        return litChronicle;
+      }
     case "mainnet":
       return polygon;
     default:

@@ -16,7 +16,7 @@ const { chains, publicClient, webSocketPublicClient } = configureChains(
 );
 
 const { connectors } = getDefaultWallets({
-  appName: "My dApp",
+  appName: "Lit Credential Store",
   projectId: env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
   chains,
 });

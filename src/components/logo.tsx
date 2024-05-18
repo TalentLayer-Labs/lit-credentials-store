@@ -9,7 +9,7 @@ export interface LogoProps {
 export const Logo = ({ href = "/", className }: LogoProps) => {
   return (
     <Link href={href} className="flex items-center gap-3">
-      <span className={clsx("text-xl font-black", className)}>TalentLayer Credential Store</span>
+      <span className={clsx("text-xl font-black", className)}>Lit x TalentLayer Credential Store</span>
     </Link>
   );
 };

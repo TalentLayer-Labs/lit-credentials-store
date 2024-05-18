@@ -19,13 +19,14 @@ import { talentlayerIdABI } from "@/abis/talentlayer-id";
 import { availableCreds } from "@/available-cred";
 import { CreateTalentLayerId } from "@/components/create-talent-layer-id";
 import StepsTabs from "@/components/steps-tabs";
+import { WalletStatus } from "@/components/wallet/wallet-status";
+import { TEST_MODE } from "@/constants/config";
 import { env } from "@/env.mjs";
 import { CredentialService } from "@/services/CredentialService";
 import { GitHubService } from "@/services/GitHubService";
 import { postToIPFS } from "@/utils/ipfs";
 import { lit } from "@/utils/lit-utils/lit";
 import { generateUUIDwithTimestamp } from "@/utils/uuid";
-import { TEST_MODE } from "@/constants/config";
 
 export default function CredentialPage() {
   const [stepId, setStepId] = useState(1);
@@ -64,7 +65,6 @@ export default function CredentialPage() {
 
   useEffect(() => {
     if (!address || !client || !code || !service) {
-      console.error("You have to connect your wallet");
       return;
     }
 
@@ -303,13 +303,17 @@ export default function CredentialPage() {
           {loading && <div>Loading...</div>}
           {stepId === 1 ? (
             <div>
-              <a
-                href={connectionUrl}
-                type="button"
-                className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              >
-                Connect with {availableCreds[credId].name}
-              </a>
+              {(!address || !client) ? (
+                <WalletStatus />
+              ):(
+                <a
+                  href={connectionUrl}
+                  type="button"
+                  className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                >
+                  Connect with {availableCreds[credId].name}
+                </a>
+              )}
             </div>
           ) : (
             <div>

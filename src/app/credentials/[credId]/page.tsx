@@ -25,6 +25,7 @@ import { GitHubService } from "@/services/GitHubService";
 import { postToIPFS } from "@/utils/ipfs";
 import { lit } from "@/utils/lit-utils/lit";
 import { generateUUIDwithTimestamp } from "@/utils/uuid";
+import { TEST_MODE } from "@/constants/config";
 
 export default function CredentialPage() {
   const [stepId, setStepId] = useState(1);
@@ -84,13 +85,13 @@ export default function CredentialPage() {
     })();
   }, [code, address, credId, client]);
 
-  const { data: id } = useContractRead({
+  const { data: id } = useContractRead(address ? {
     abi: talentlayerIdABI,
     address: env.NEXT_PUBLIC_TALENTLAYER_DID_ADDRESS as `0x${string}`,
     account: address,
     args: [address],
     functionName: "ids",
-  });
+  }: undefined);
 
   const { data: profile } = useContractRead({
     abi: talentlayerIdABI,
@@ -234,13 +235,15 @@ export default function CredentialPage() {
     setNewCid(cid);
   }
 
-  if (!profile || !(profile as any[])[3]) {
-    return (
-      <div>
-        <div className="">TalentLayer ID not found</div>
-        <CreateTalentLayerId />
-      </div>
-    );
+  if (!TEST_MODE) { // FIXME: can't load profile even after deploying contracts on amoy and minting a TLID (can't update on starterkit)
+    if (!profile || !(profile as any[])[3]) {
+      return (
+        <div>
+          <div className="">TalentLayer ID not found</div>
+          <CreateTalentLayerId />
+        </div>
+      );
+    }
   }
 
   if (!Object.hasOwn(availableCreds, credId)) {

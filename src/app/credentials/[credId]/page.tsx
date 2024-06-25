@@ -123,7 +123,7 @@ export default function CredentialPage() {
       conditionType: "evmBasic",
       contractAddress: env.NEXT_PUBLIC_TALENTLAYER_DID_ADDRESS,
       standardContractType: "ERC20",
-      chain: env.NEXT_PUBLIC_CHAIN == "testnet" ? "amoy" : "polygon",
+      chain: "fuji",
       method: "balanceOf",
       parameters: [":userAddress"],
       returnValueTest: {

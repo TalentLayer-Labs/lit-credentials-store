@@ -91,13 +91,13 @@ export default function CredentialPage() {
     functionName: "ids",
   }: undefined);
 
-  const { data: profile } = useContractRead({
+  const { data: profile } = useContractRead(id ? {
     abi: talentlayerIdABI,
     address: env.NEXT_PUBLIC_TALENTLAYER_DID_ADDRESS as `0x${string}`,
     account: address,
     args: [id],
     functionName: "profiles",
-  });
+  }: undefined);
 
   useEffect(() => {
     if (!profile || !(profile as any[])[3]) {
@@ -138,13 +138,13 @@ export default function CredentialPage() {
   }, []);
 
   const [newCid, setNewCid] = useState<string>();
-  const { config } = usePrepareContractWrite({
+  const { config } = usePrepareContractWrite(newCid && id ? {
     abi: talentlayerIdABI,
     address: env.NEXT_PUBLIC_TALENTLAYER_DID_ADDRESS as `0x${string}`,
     account: address,
     args: [id, newCid],
     functionName: "updateProfileData",
-  });
+  }: undefined);
 
   const { writeAsync } = useContractWrite(config);
 
@@ -163,6 +163,8 @@ export default function CredentialPage() {
 
   async function encrypt() {
     if (!client || !credential) return;
+
+    await lit.connect();
 
     const data = await lit.encrypt(
       client,

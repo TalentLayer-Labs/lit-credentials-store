@@ -17,10 +17,8 @@ import {
 
 import { talentlayerIdABI } from "@/abis/talentlayer-id";
 import { availableCreds } from "@/available-cred";
-import { CreateTalentLayerId } from "@/components/create-talent-layer-id";
 import StepsTabs from "@/components/steps-tabs";
 import { WalletStatus } from "@/components/wallet/wallet-status";
-import { TEST_MODE } from "@/constants/config";
 import { env } from "@/env.mjs";
 import { CredentialService } from "@/services/CredentialService";
 import { GitHubService } from "@/services/GitHubService";
@@ -233,17 +231,6 @@ export default function CredentialPage() {
     profileData.credentials.push(newCredential);
     const cid = await postToIPFS(JSON.stringify(profileData));
     setNewCid(cid);
-  }
-
-  if (!TEST_MODE) { // FIXME: can't load profile even after deploying contracts on amoy and minting a TLID (can't update on starterkit)
-    if (!profile || !(profile as any[])[3]) {
-      return (
-        <div>
-          <div className="">TalentLayer ID not found</div>
-          <CreateTalentLayerId />
-        </div>
-      );
-    }
   }
 
   if (!Object.hasOwn(availableCreds, credId)) {

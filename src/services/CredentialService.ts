@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/filename-case */
 export interface CredentialService {
   getAuthenticationUrl(redirectUrl: string): string;
   fetchAccessToken(code: string, address: string): Promise<string>;

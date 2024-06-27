@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/filename-case */
 import { ExecuteJsResponse } from "@lit-protocol/types";
 import axios from "axios";
 import { ethers } from "ethers";

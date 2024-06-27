@@ -2,7 +2,7 @@
 // It checks his programming skills and open source contributions from GitHub.
 // The file is uploaded on ipfs and the ccid is passed to the LitAction in page.tsx
 
-const generateUUIDwithTimestamp = () => {
+export const generateUUIDwithTimestamp = () => {
   const timestamp = Date.now().toString()
   const uuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (
     c
@@ -30,7 +30,7 @@ const SECONDARY_ERROR_MESSAGES = {
 /**
  * Custom error class to handle custom GRS errors.
  */
-class CustomError extends Error {
+export class CustomError extends Error {
   /**
    * @param {string} message Error message.
    * @param {string} type Error type.

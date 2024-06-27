@@ -17,7 +17,8 @@ import {
 
 import { talentlayerIdABI } from "@/abis/talentlayer-id";
 import { availableCreds } from "@/available-cred";
-import StepsTabs from "@/components/steps-tabs";
+import { CreateTalentLayerId } from "@/components/create-talent-layer-id";
+import { StepsTabs } from "@/components/steps-tabs";
 import { WalletStatus } from "@/components/wallet/wallet-status";
 import { env } from "@/env.mjs";
 import { CredentialService } from "@/services/CredentialService";
@@ -25,7 +26,6 @@ import { GitHubService } from "@/services/GitHubService";
 import { pinToTheGraph, postToIPFSwithPinata } from "@/utils/ipfs";
 import { lit } from "@/utils/lit-utils/lit";
 import { generateUUIDwithTimestamp } from "@/utils/uuid";
-import { CreateTalentLayerId } from "@/components/create-talent-layer-id";
 
 export default function CredentialPage() {
   const [stepId, setStepId] = useState(1);

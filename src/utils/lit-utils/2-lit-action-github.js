@@ -407,7 +407,7 @@ const fetchTopLanguages = async (
   return topLangs
 }
 
-async function createClaims(token) {
+export async function createClaims(token) {
   let claims = []
 
   const response = await fetch("https://api.github.com/user", {

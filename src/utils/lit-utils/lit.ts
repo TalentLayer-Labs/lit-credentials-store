@@ -1,45 +1,43 @@
 "use client";
 
+import { AuthMethodScope, AuthMethodType } from '@lit-protocol/constants';
+import { LitContracts } from '@lit-protocol/contracts-sdk';
 import * as LitJsSdk from "@lit-protocol/lit-node-client";
-import { EvmContractConditions } from "@lit-protocol/types";
+import { AccessControlConditions } from "@lit-protocol/types";
 import { GetWalletClientResult } from "@wagmi/core";
+import { ethers } from 'ethers';
 
 import { signAndSaveAuthMessage } from "./signature";
-
-const client = new LitJsSdk.LitNodeClient({
-  litNetwork: "cayenne",
-});
 
 class Lit {
   litNodeClient: LitJsSdk.LitNodeClient;
   chain;
 
-  constructor(chain: string = "mumbai") {
+  constructor(chain: string = "fuji") {
     this.chain = chain;
-    this.litNodeClient = client;
+    this.litNodeClient = new LitJsSdk.LitNodeClient({
+      litNetwork: "cayenne",
+    });
   }
 
   async connect() {
     await this.litNodeClient.connect();
   }
 
+  // We use AccessControlConditions, not to be confused with EVMContractConditions
   async encrypt(
     client: GetWalletClientResult,
-    evmContractConditions: EvmContractConditions,
+    accessControlConditions: AccessControlConditions,
     message: string,
   ) {
     if (!this.litNodeClient.connectedNodes) {
       await this.connect();
     }
 
-    const authSig = await signAndSaveAuthMessage({
-      web3: client,
-      expiration: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
-    });
+    const authSig = await this.getAuthSig(client);
     const { ciphertext, dataToEncryptHash } = await LitJsSdk.encryptString(
       {
-        evmContractConditions,
-        // accessControlConditions,
+        accessControlConditions,
         authSig,
         chain: this.chain,
         dataToEncrypt: message,
@@ -52,8 +50,52 @@ class Lit {
       dataToEncryptHash,
     };
   }
+
+  async getAuthSig(client: GetWalletClientResult) {
+    if (!this.litNodeClient.connectedNodes) {
+      await this.connect();
+    }
+
+    const authSig = await signAndSaveAuthMessage({
+      web3: client,
+      expiration: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
+    });
+    return authSig;
+  }
+
+  async mintPkp(client: GetWalletClientResult) {
+    console.log("mintPkp");
+    const authSig = await this.getAuthSig(client);
+
+    // Mint a PKP and Add Permitted Scopes
+    const authMethod = {
+      authMethodType: AuthMethodType.EthWallet,
+      accessToken: JSON.stringify(authSig),
+    };
+
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    // await provider.send("eth_requestAccounts", []);
+    const ethersSigner = provider.getSigner();
+
+    // Connect contract
+    const contractClient = new LitContracts({
+      signer: ethersSigner,
+      network: 'cayenne',
+    });
+    await contractClient.connect();
+
+    const mintInfo = await contractClient.mintWithAuth({
+      authMethod: authMethod,
+      scopes: [
+        AuthMethodScope.SignAnything, // allow to sign Tx
+        // AuthMethodScope.PersonalSign // allow only signing (EIP-191)
+        // AuthMethodScope.NoPermissions, // just prove ownership
+      ],
+    });
+    return mintInfo.pkp;
+  }
 }
 
 const lit = new Lit();
 
-export default lit;
+export { lit };

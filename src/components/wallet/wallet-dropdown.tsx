@@ -21,7 +21,7 @@ export const WalletDropdown = ({ address }: WalletDropdownProps) => {
 
   return (
     <Dropdown className="inline-flex">
-      <DropdownTrigger className="rounded-btn flex items-center gap-2 bg-base-200 px-4 py-1.5 hover:bg-base-300">
+      <DropdownTrigger className="rounded-btn flex items-center gap-2 px-4 py-1.5 hover:bg-slate-300">
         <AddressAvatar address={address} />
         <Address address={address} />
       </DropdownTrigger>
@@ -31,7 +31,7 @@ export const WalletDropdown = ({ address }: WalletDropdownProps) => {
           as="button"
           className="gap-2 text-sm"
         >
-          <DocumentDuplicateIcon className="h-5 w-5" />
+          <DocumentDuplicateIcon className="size-5" />
           Copy address
         </DropdownItem>
         <DropdownItem

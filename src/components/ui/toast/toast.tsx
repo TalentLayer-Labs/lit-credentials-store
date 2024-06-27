@@ -59,18 +59,18 @@ const Toast = forwardRef(
           {type && (
             <div
               className={clsx(
-                "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+                "flex size-9 shrink-0 items-center justify-center rounded-full",
                 { "bg-success": type === "success" },
                 { "bg-warning": type === "warning" },
                 { "bg-error": type === "error" },
               )}
             >
-              {type === "success" && <CheckIcon className="h-5 w-5 text-success-content" />}
+              {type === "success" && <CheckIcon className="size-5 text-success-content" />}
               {type === "warning" && (
-                <ExclamationTriangleIcon className="h-6 w-6 text-warning-content" />
+                <ExclamationTriangleIcon className="size-6 text-warning-content" />
               )}
               {type === "error" && (
-                <ExclamationTriangleIcon className="h-6 w-6 text-error-content" />
+                <ExclamationTriangleIcon className="size-6 text-error-content" />
               )}
             </div>
           )}
@@ -105,7 +105,7 @@ const Toast = forwardRef(
           )}
           toast-close=""
         >
-          <XMarkIcon className="h-4 w-4" />
+          <XMarkIcon className="size-4" />
         </ToastPrimitives.Close>
       </ToastPrimitives.Root>
     );

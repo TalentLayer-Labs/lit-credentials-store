@@ -5,7 +5,7 @@ const steps = [
   { id: "02", name: "Save the credentials", href: "#" },
 ];
 
-export default function StepsTabs({ stepId }: { stepId: number }) {
+export function StepsTabs({ stepId }: { stepId: number }) {
   return (
     <nav aria-label="Progress">
       <ol

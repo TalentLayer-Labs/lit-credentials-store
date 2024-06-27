@@ -1,7 +1,7 @@
 "use client";
 
 import { HomeIcon } from "@heroicons/react/24/solid";
-import { EvmContractConditions } from "@lit-protocol/types";
+import { AccessControlConditions } from "@lit-protocol/types";
 import { Card, Text } from "@radix-ui/themes";
 import axios from "axios";
 import Link from "next/link";
@@ -16,12 +16,16 @@ import {
 } from "wagmi";
 
 import { talentlayerIdABI } from "@/abis/talentlayer-id";
-import { availableCreds } from "@/availableCred";
+import { availableCreds } from "@/available-cred";
 import { CreateTalentLayerId } from "@/components/create-talent-layer-id";
-import StepsTabs from "@/components/steps-tabs";
+import { StepsTabs } from "@/components/steps-tabs";
+import { WalletStatus } from "@/components/wallet/wallet-status";
 import { env } from "@/env.mjs";
-import { postToIPFS } from "@/utils/ipfs";
-import lit from "@/utils/lit-utils/lit";
+import { CredentialService } from "@/services/CredentialService";
+import { GitHubService } from "@/services/GitHubService";
+import { pinToTheGraph, postToIPFSwithPinata } from "@/utils/ipfs";
+import { lit } from "@/utils/lit-utils/lit";
+import { generateUUIDwithTimestamp } from "@/utils/uuid";
 
 export default function CredentialPage() {
   const [stepId, setStepId] = useState(1);
@@ -34,31 +38,43 @@ export default function CredentialPage() {
   const [initialProfile, setInitialProfile] = useState<any>({});
   const [transactionHash, setTransactionHash] = useState<string>();
   const { credId } = useParams<{ credId: string }>();
+  const { data: client } = useWalletClient();
 
-  if (!Object.hasOwn(availableCreds, credId)) {
-    return <div>Credential Not Found</div>;
+  let service: CredentialService | null = null;
+
+  if (credId && availableCreds[credId]) {
+    const { clientId, scope, authenticationUrl } = availableCreds[credId];
+    switch (credId) {
+      case 'github':
+        service = new GitHubService(clientId, scope, authenticationUrl, credId);
+        break;
+    }
   }
 
   useEffect(() => {
+    if (!Object.hasOwn(availableCreds, credId)) {
+      return;
+    }
     const params = new URLSearchParams();
     params.set("client_id", availableCreds[credId].clientId);
     params.set("scope", availableCreds[credId].scope);
     params.set("redirect_url", window.location.origin + window.location.pathname);
     setConnectionUrl(`${availableCreds[credId].authenticationUrl}?${params.toString()}`);
-  }, []);
+  }, [credId]);
 
   useEffect(() => {
-    if (!code || !address) return;
+    if (!address || !client || !code || !service) {
+      return;
+    }
 
     (async () => {
       setLoading(true);
 
       try {
-        const {
-          data: { credential: _credential },
-        } = await axios.post(`/api/credentials/${credId}`, { code, address });
-        setCredential(_credential);
+        const accessToken = await service.fetchAccessToken(code, address);
+        const fetchedCredential = await service.fetchCredential(accessToken, address, client);
 
+        setCredential(fetchedCredential);
         setStepId(2);
       } catch (e) {
         console.log(e);
@@ -66,33 +82,23 @@ export default function CredentialPage() {
         setLoading(false);
       }
     })();
-  }, [code, address]);
+  }, [code, address, credId, client]);
 
-  const { data: client } = useWalletClient();
+  const { data: id } = useContractRead(address ? {
+    abi: talentlayerIdABI,
+    address: env.NEXT_PUBLIC_TALENTLAYER_DID_ADDRESS as `0x${string}`,
+    account: address,
+    args: [address],
+    functionName: "ids",
+  }: undefined);
 
-  const { data: id } = useContractRead(
-    address
-      ? {
-          abi: talentlayerIdABI,
-          address: env.NEXT_PUBLIC_DID_ADDRESS as `0x${string}`,
-          account: address,
-          args: [address],
-          functionName: "ids",
-        }
-      : undefined,
-  );
-
-  const { data: profile } = useContractRead(
-    id
-      ? {
-          abi: talentlayerIdABI,
-          address: env.NEXT_PUBLIC_DID_ADDRESS as `0x${string}`,
-          account: address,
-          args: [id],
-          functionName: "profiles",
-        }
-      : undefined,
-  );
+  const { data: profile } = useContractRead(id ? {
+    abi: talentlayerIdABI,
+    address: env.NEXT_PUBLIC_TALENTLAYER_DID_ADDRESS as `0x${string}`,
+    account: address,
+    args: [id],
+    functionName: "profiles",
+  }: undefined);
 
   useEffect(() => {
     if (!profile || !(profile as any[])[3]) {
@@ -109,38 +115,19 @@ export default function CredentialPage() {
     })();
   }, [profile]);
 
-  console.log(initialProfile);
-
-  const accessControlConditions: EvmContractConditions = [
+  // This access control condition check if the user balance of the following contract (TalentLayerId) is >= 1
+  // Generated with : https://lit-share-modal-v3-playground.netlify.app/
+  const accessControlConditions: AccessControlConditions = [
     {
-      conditionType: "evmContract",
-      contractAddress: env.NEXT_PUBLIC_DID_ADDRESS,
-      functionName: "balanceOf",
-      functionParams: [":userAddress"],
-      functionAbi: {
-        type: "function",
-        stateMutability: "view",
-        outputs: [
-          {
-            type: "uint256",
-            name: "",
-            internalType: "uint256",
-          },
-        ],
-        name: "balanceOf",
-        inputs: [
-          {
-            type: "address",
-            name: "account",
-            internalType: "address",
-          },
-        ],
-      },
-      chain: env.NEXT_PUBLIC_CHAIN == "testnet" ? "mumbai" : "polygon",
+      conditionType: "evmBasic",
+      contractAddress: env.NEXT_PUBLIC_TALENTLAYER_DID_ADDRESS,
+      standardContractType: "ERC20",
+      chain: "fuji",
+      method: "balanceOf",
+      parameters: [":userAddress"],
       returnValueTest: {
-        key: "",
-        comparator: ">",
-        value: "0",
+        comparator: ">=",
+        value: "1",
       },
     },
   ];
@@ -152,17 +139,13 @@ export default function CredentialPage() {
   }, []);
 
   const [newCid, setNewCid] = useState<string>();
-  const { config } = usePrepareContractWrite(
-    newCid && id
-      ? {
-          abi: talentlayerIdABI,
-          address: env.NEXT_PUBLIC_DID_ADDRESS as `0x${string}`,
-          account: address,
-          args: [id, newCid],
-          functionName: "updateProfileData",
-        }
-      : undefined,
-  );
+  const { config } = usePrepareContractWrite(newCid && id ? {
+    abi: talentlayerIdABI,
+    address: env.NEXT_PUBLIC_TALENTLAYER_DID_ADDRESS as `0x${string}`,
+    account: address,
+    args: [id, newCid],
+    functionName: "updateProfileData",
+  }: undefined);
 
   const { writeAsync } = useContractWrite(config);
 
@@ -170,13 +153,19 @@ export default function CredentialPage() {
     if (!newCid || !writeAsync) return;
 
     (async () => {
-      const { hash } = await writeAsync();
-      setTransactionHash(hash);
-    })().catch((err) => console.error(err));
+      try {
+        const { hash } = await writeAsync();
+        setTransactionHash(hash);
+      } catch (err) {
+        console.error(err);
+      }
+    })();
   }, [newCid, writeAsync]);
 
   async function encrypt() {
     if (!client || !credential) return;
+
+    await lit.connect();
 
     const data = await lit.encrypt(
       client,
@@ -194,15 +183,23 @@ export default function CredentialPage() {
         c.credential.author !== credential.credential.author ||
         c.credential.platform !== credential.credential.platform,
     );
-    const newCredential = structuredClone(credential);
+    // Ensure id uniqueness
+    const newCredential = {
+      ...credential,
+      id: generateUUIDwithTimestamp(),
+      credential: { ...credential.credential, id: generateUUIDwithTimestamp() },
+    };
     delete newCredential.credential.claims;
+
     newCredential.credential.claimsEncrypted = {
+      id: generateUUIDwithTimestamp(),
       ...data,
       total: credential.credential.claims?.length || 0,
-      condition: accessControlConditions,
+      condition: JSON.stringify(accessControlConditions), // saved as json for easy storage in ipfs - no need to define a new type
     };
     profileData.credentials.push(newCredential);
-    const cid = await postToIPFS(JSON.stringify(profileData));
+    const cid = await postToIPFSwithPinata(JSON.stringify(profileData));
+    await pinToTheGraph(JSON.stringify(profileData)); // pin to the graph to request indexation 
     setNewCid(cid);
   }
 
@@ -219,9 +216,29 @@ export default function CredentialPage() {
         c.credential.author !== credential.credential.author ||
         c.credential.platform !== credential.credential.platform,
     );
-    profileData.credentials.push(credential);
-    const cid = await postToIPFS(JSON.stringify(profileData));
+
+    // Ensure id uniqueness
+    const newCredential = {
+      ...credential,
+      id: generateUUIDwithTimestamp(),
+      credential: { ...credential.credential, id: generateUUIDwithTimestamp() },
+    };
+    delete newCredential.credential.claimsEncrypted;
+
+    // Stringify complex values
+    newCredential.credential.claims?.map((claim) => {
+      claim.id = generateUUIDwithTimestamp();
+      if (typeof claim.value !== "string") {
+        claim.value = JSON.stringify(claim.value);
+      }
+    });
+    profileData.credentials.push(newCredential);
+    const cid = await pinToTheGraph(JSON.stringify(profileData));
     setNewCid(cid);
+  }
+
+  if (!Object.hasOwn(availableCreds, credId)) {
+    return <div>Credential Not Found</div>;
   }
 
   if (!profile || !(profile as any[])[3]) {
@@ -240,7 +257,7 @@ export default function CredentialPage() {
           <li className="flex">
             <div className="flex items-center">
               <Link href="/" className="text-gray-400 hover:text-gray-500">
-                <HomeIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                <HomeIcon className="size-5 shrink-0" aria-hidden="true" />
                 <span className="sr-only">Home</span>
               </Link>
             </div>
@@ -286,37 +303,39 @@ export default function CredentialPage() {
           {loading && <div>Loading...</div>}
           {stepId === 1 ? (
             <div>
-              <a
-                href={connectionUrl}
-                type="button"
-                className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              >
-                Connect with {availableCreds[credId].name}
-              </a>
+              {(!address || !client) ? (
+                <WalletStatus />
+              ):(
+                <a
+                  href={connectionUrl}
+                  type="button"
+                  className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                >
+                  Connect with {availableCreds[credId].name}
+                </a>
+              )}
             </div>
           ) : (
             <div>
               <div className="my-4 text-xl font-bold">Claims</div>
-              <div className="">
-                <div className="grid grid-cols-3 gap-3">
-                  {credential?.credential.claims?.map((claim) => (
-                    <Card key={claim.criteria} variant="surface" className="">
-                      <Text as="div" size="2" weight="bold">
-                        {claim.criteria}
-                      </Text>
-                      <Text as="div" color="gray" size="2">
-                        {claim.condition}{" "}
-                        {Array.isArray(claim.value) ? `[${claim.value.join(", ")}]` : claim.value}
-                      </Text>
-                    </Card>
-                  ))}
-                </div>
+              <div className="grid grid-cols-3 gap-3">
+                {credential?.credential.claims?.map((claim) => (
+                  <Card key={claim.criteria} variant="surface">
+                    <Text as="div" size="2" weight="bold">
+                      {claim.criteria}
+                    </Text>
+                    <Text as="div" color="gray" size="2">
+                      {claim.condition}{" "}
+                      {Array.isArray(claim.value) ? `[${claim.value.join(", ")}]` : claim.value}
+                    </Text>
+                  </Card>
+                ))}
               </div>
               <div className="text-center">
                 <button onClick={save} className="btn btn-primary mt-4">
                   Save
                 </button>
-                <button onClick={encrypt} className="ml-4 mt-4 btn btn-secondary">
+                <button onClick={encrypt} className="btn btn-secondary ml-4 mt-4">
                   Encrypt & Save
                 </button>
               </div>

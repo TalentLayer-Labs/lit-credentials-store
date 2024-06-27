@@ -4,7 +4,7 @@ import "@radix-ui/themes/styles.css";
 import { Inter } from "next/font/google";
 
 import { Container } from "@/components/layout/container";
-import { Footer } from "@/components/layout/footer";
+// import { Footer } from "@/components/layout/footer";
 import { Navbar } from "@/components/layout/navbar";
 import { Toaster } from "@/components/ui/toast";
 

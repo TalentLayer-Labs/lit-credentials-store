@@ -22,9 +22,10 @@ import { WalletStatus } from "@/components/wallet/wallet-status";
 import { env } from "@/env.mjs";
 import { CredentialService } from "@/services/CredentialService";
 import { GitHubService } from "@/services/GitHubService";
-import { postToIPFS } from "@/utils/ipfs";
+import { pinToTheGraph, postToIPFSwithPinata } from "@/utils/ipfs";
 import { lit } from "@/utils/lit-utils/lit";
 import { generateUUIDwithTimestamp } from "@/utils/uuid";
+import { CreateTalentLayerId } from "@/components/create-talent-layer-id";
 
 export default function CredentialPage() {
   const [stepId, setStepId] = useState(1);
@@ -197,7 +198,8 @@ export default function CredentialPage() {
       condition: JSON.stringify(accessControlConditions), // saved as json for easy storage in ipfs - no need to define a new type
     };
     profileData.credentials.push(newCredential);
-    const cid = await postToIPFS(JSON.stringify(profileData));
+    const cid = await postToIPFSwithPinata(JSON.stringify(profileData));
+    await pinToTheGraph(JSON.stringify(profileData)); // pin to the graph to request indexation 
     setNewCid(cid);
   }
 
@@ -231,12 +233,21 @@ export default function CredentialPage() {
       }
     });
     profileData.credentials.push(newCredential);
-    const cid = await postToIPFS(JSON.stringify(profileData));
+    const cid = await pinToTheGraph(JSON.stringify(profileData));
     setNewCid(cid);
   }
 
   if (!Object.hasOwn(availableCreds, credId)) {
     return <div>Credential Not Found</div>;
+  }
+
+  if (!profile || !(profile as any[])[3]) {
+    return (
+      <div>
+        <div className="">TalentLayer ID not found</div>
+        <CreateTalentLayerId />
+      </div>
+    );
   }
 
   return (

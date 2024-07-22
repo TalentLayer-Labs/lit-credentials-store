@@ -3,8 +3,6 @@ import { hardhat, polygon, avalancheFuji } from "wagmi/chains";
 
 import { env } from "@/env.mjs";
 
-import { FIXED_PKP } from "./config";
-
 export const polygonAmoy = defineChain({
   id: 80002,
   name: 'Polygon Amoy',
@@ -60,13 +58,7 @@ const getChain = () => {
     case "localhost":
       return hardhat;
     case "testnet":
-      if (FIXED_PKP) {
-        console.log("Using fixed PKP, using avalanche fuji");
-        return avalancheFuji;
-      } else {
-        console.log("Using fixed PKP, using Lit Chronicle chain. Needed to mint a PKP");
-        return litChronicle;
-      }
+      return avalancheFuji;
     case "mainnet":
       return polygon;
     default:

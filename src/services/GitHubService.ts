@@ -57,7 +57,7 @@ export class GitHubService implements CredentialService {
   }
 
   private async initLitAction(githubAccessToken: string, userAddress: string, authSig: any, client: any) {
-    const pkp = await this.getPkp(client);
+    const pkp = (await lit.mintPkp(client)).publicKey;
     const sigName = "sig1";
 
     return await lit.litNodeClient.executeJs({
@@ -71,9 +71,5 @@ export class GitHubService implements CredentialService {
         userAddress,
       },
     });
-  }
-
-  private async getPkp(client: any): Promise<string> {
-    return FIXED_PKP ? FIXED_PKP : (await lit.mintPkp(client)).publicKey;
   }
 }

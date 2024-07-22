@@ -71,7 +71,6 @@ import { ExecuteJsResponse } from "@lit-protocol/types";
 import axios from "axios";
 import { ethers } from "ethers";
 
-import { FIXED_PKP } from "@/constants/config";
 import { lit } from "@/utils/lit-utils/lit";
 import { signAndSaveAuthMessage } from "@/utils/lit-utils/signature";
 
@@ -108,14 +107,8 @@ export class GitlabService implements CredentialService {
       jsParams: { toSign: ethers.utils.arrayify(ethers.utils.keccak256(ethers.utils.toUtf8Bytes("Hello world"))), publicKey: pkp, sigName, accessToken, userAddress },
     });
   }
-
-  private async getPkp(client: any): Promise<string> {
-    return FIXED_PKP ? FIXED_PKP : (await lit.mintPkp(client)).publicKey;
-  }
 }
 ```
-
-Ps: you can configure a `FIXED_PKP` by minting one on [lit explorer](https://explorer.litprotocol.com/mint-pkp) for the cayenne testnet. This will be used instead to sign transactions. If you don't use it, it will automatically fallback to the `mintPkp` function. To run it, the user needs to be on the Lit "Chronicle" Testnet (requested automatically) and have [Lit Faucet](https://faucet.litprotocol.com/)
 
 ### Step 3: Update availableCreds
 

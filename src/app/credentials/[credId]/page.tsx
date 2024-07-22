@@ -3,19 +3,17 @@
 import { HomeIcon } from "@heroicons/react/24/solid";
 import { AccessControlConditions } from "@lit-protocol/types";
 import { Card, Text } from "@radix-ui/themes";
-import axios from "axios";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   useAccount,
-  useContractRead,
   useWalletClient,
-  usePrepareContractWrite,
-  useContractWrite,
+  useSwitchNetwork,
+  useNetwork,
 } from "wagmi";
 
-import { talentlayerIdABI } from "@/abis/talentlayer-id";
+import { useUserContext } from "@/app/context/userContext";
 import { availableCreds } from "@/available-cred";
 import { CreateTalentLayerId } from "@/components/create-talent-layer-id";
 import { StepsTabs } from "@/components/steps-tabs";
@@ -27,6 +25,8 @@ import { pinToTheGraph, postToIPFSwithPinata } from "@/utils/ipfs";
 import { lit } from "@/utils/lit-utils/lit";
 import { generateUUIDwithTimestamp } from "@/utils/uuid";
 
+import {Credential} from "../../../interfaces/Credential"
+
 export default function CredentialPage() {
   const [stepId, setStepId] = useState(1);
   const [connectionUrl, setConnectionUrl] = useState<string>();
@@ -35,10 +35,12 @@ export default function CredentialPage() {
   const [loading, setLoading] = useState(false);
   const { address } = useAccount();
   const [credential, setCredential] = useState<Credential>();
-  const [initialProfile, setInitialProfile] = useState<any>({});
-  const [transactionHash, setTransactionHash] = useState<string>();
   const { credId } = useParams<{ credId: string }>();
   const { data: client } = useWalletClient();
+  const { switchNetwork } = useSwitchNetwork();
+  const [newCid, setNewCid] = useState<string>();
+  const { chain } = useNetwork();
+  const { profile, initialProfile, loading: userLoading, udaptedUserTxHash } = useUserContext();
 
   let service: CredentialService | null = null;
 
@@ -82,38 +84,7 @@ export default function CredentialPage() {
         setLoading(false);
       }
     })();
-  }, [code, address, credId, client]);
-
-  const { data: id } = useContractRead(address ? {
-    abi: talentlayerIdABI,
-    address: env.NEXT_PUBLIC_TALENTLAYER_DID_ADDRESS as `0x${string}`,
-    account: address,
-    args: [address],
-    functionName: "ids",
-  }: undefined);
-
-  const { data: profile } = useContractRead(id ? {
-    abi: talentlayerIdABI,
-    address: env.NEXT_PUBLIC_TALENTLAYER_DID_ADDRESS as `0x${string}`,
-    account: address,
-    args: [id],
-    functionName: "profiles",
-  }: undefined);
-
-  useEffect(() => {
-    if (!profile || !(profile as any[])[3]) {
-      setInitialProfile({});
-      return;
-    }
-
-    const oldProfileCID = (profile as any)[3] as string;
-    (async () => {
-      const { data } = await axios.get(
-        `${process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL}/ipfs/${oldProfileCID}`,
-      );
-      setInitialProfile(data);
-    })();
-  }, [profile]);
+  }, [code, address, credId, client, switchNetwork]);
 
   // This access control condition check if the user balance of the following contract (TalentLayerId) is >= 1
   // Generated with : https://lit-share-modal-v3-playground.netlify.app/
@@ -137,30 +108,6 @@ export default function CredentialPage() {
       await lit.connect();
     })();
   }, []);
-
-  const [newCid, setNewCid] = useState<string>();
-  const { config } = usePrepareContractWrite(newCid && id ? {
-    abi: talentlayerIdABI,
-    address: env.NEXT_PUBLIC_TALENTLAYER_DID_ADDRESS as `0x${string}`,
-    account: address,
-    args: [id, newCid],
-    functionName: "updateProfileData",
-  }: undefined);
-
-  const { writeAsync } = useContractWrite(config);
-
-  useEffect(() => {
-    if (!newCid || !writeAsync) return;
-
-    (async () => {
-      try {
-        const { hash } = await writeAsync();
-        setTransactionHash(hash);
-      } catch (err) {
-        console.error(err);
-      }
-    })();
-  }, [newCid, writeAsync]);
 
   async function encrypt() {
     if (!client || !credential) return;
@@ -284,7 +231,7 @@ export default function CredentialPage() {
         </ol>
       </nav>
 
-      {transactionHash ? (
+      {udaptedUserTxHash ? (
         <div>
           The credential is added to your profile. Click{" "}
           <a

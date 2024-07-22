@@ -10,6 +10,8 @@ import { publicProvider } from "wagmi/providers/public";
 import { CHAIN } from "@/constants/chains";
 import { env } from "@/env.mjs";
 
+import { UserProvider } from "./context/userContext";
+
 const { chains, publicClient, webSocketPublicClient } = configureChains(
   [CHAIN],
   [infuraProvider({ apiKey: env.NEXT_PUBLIC_INFURA_ID }), publicProvider()],
@@ -33,7 +35,9 @@ export function Providers({ children, ...props }: ThemeProviderProps) {
   return (
     <WagmiConfig config={config}>
       <RainbowKitProvider chains={chains}>
-        <ThemeProvider {...props}>{children}</ThemeProvider>
+        <UserProvider>
+          <ThemeProvider {...props}>{children}</ThemeProvider>
+        </UserProvider>
       </RainbowKitProvider>
     </WagmiConfig>
   );

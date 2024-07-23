@@ -8,7 +8,7 @@ import { signAndSaveAuthMessage } from "@/utils/lit-utils/signature";
 
 import { ICredential } from "../interfaces/Credential";
 
-import { CredentialService } from "./CredentialService";
+import { CredentialService } from "./credential-service";
 
 
 export class GitHubService implements CredentialService {

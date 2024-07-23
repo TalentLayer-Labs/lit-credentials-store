@@ -15,11 +15,10 @@ interface ProfileType {
 }
 
 interface UserContextType {
-  id: string | undefined;
-  profile: ProfileType | undefined;
+  id: string | unknown;
+  profile: ProfileType | unknown;
   initialProfile: ProfileType | undefined;
   newCid: string | undefined;
-  transactionHash: string | undefined;
   loading: boolean;
   udaptedUserTxHash: string | undefined;
   WriteProfile: ({newCid}: {newCid: string}) => Promise<string | undefined>;
@@ -87,7 +86,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchProfileData();
   }, [profile]);
 
-  const WriteProfile = ({newCid}: {newCid: string}) => {
+  const WriteProfile = async ({newCid}: {newCid: string}): Promise<string | undefined> => {
     // Prepare the contract write to update the user's profile
     const { config } = usePrepareContractWrite(
       newCid && id
@@ -121,11 +120,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       executeWriteProfile();
     }, [writeAsync]);
+    return "";
   }
 
   return (
     <UserContext.Provider
-      value={{ profile, initialProfile, newCid, setNewCid, udaptedUserTxHash, WriteProfile, loading }} // Include loading in context
+      value={{ id, profile, initialProfile, newCid, setNewCid, udaptedUserTxHash, WriteProfile, loading }}
     >
       {children}
     </UserContext.Provider>

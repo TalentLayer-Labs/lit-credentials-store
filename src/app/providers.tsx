@@ -10,7 +10,7 @@ import { publicProvider } from "wagmi/providers/public";
 import { CHAIN, litChronicle } from "@/constants/chains";
 import { env } from "@/env.mjs";
 
-import { UserProvider } from "./context/userContext";
+import { UserProvider } from "./context/user-context";
 
 const { chains, publicClient, webSocketPublicClient } = configureChains(
   [CHAIN, litChronicle],

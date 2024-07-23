@@ -14,15 +14,15 @@ import {
   useNetwork,
 } from "wagmi";
 
-import { useUserContext } from "@/app/context/userContext";
+import { useUserContext } from "@/app/context/user-context";
 import { availableCreds } from "@/available-cred";
 import { CreateTalentLayerId } from "@/components/create-talent-layer-id";
 import { StepsTabs } from "@/components/steps-tabs";
 import { WalletStatus } from "@/components/wallet/wallet-status";
 import { litChronicle } from "@/constants/chains";
 import { env } from "@/env.mjs";
-import { CredentialService } from "@/services/CredentialService";
-import { GitHubService } from "@/services/GitHubService";
+import { CredentialService } from "@/services/credential-service";
+import { GitHubService } from "@/services/github-service";
 import { pinToTheGraph, postToIPFSwithPinata } from "@/utils/ipfs";
 import { lit } from "@/utils/lit-utils/lit";
 import { generateUUIDwithTimestamp } from "@/utils/uuid";
@@ -40,7 +40,7 @@ export default function CredentialPage() {
   const { data: client } = useWalletClient();
   const { switchNetwork } = useSwitchNetwork();
   const { chain } = useNetwork();
-  const { profile, initialProfile, newCid, setNewCid, WriteProfile, udaptedUserTxHash } = useUserContext();
+  const { profile, initialProfile, newCid, setNewCid, WriteProfile, udaptedUserTxHash } = useUserContext() as { profile: any, initialProfile: any, newCid: any, setNewCid: any, WriteProfile: any, udaptedUserTxHash: any };
   const [updatedProfile, setUpdatedProfile] = useState<any>();
 
   let service: CredentialService | null = null;

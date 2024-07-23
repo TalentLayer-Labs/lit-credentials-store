@@ -7,13 +7,13 @@ import { WagmiConfig, configureChains, createConfig } from "wagmi";
 import { infuraProvider } from "wagmi/providers/infura";
 import { publicProvider } from "wagmi/providers/public";
 
-import { CHAIN } from "@/constants/chains";
+import { CHAIN, litChronicle } from "@/constants/chains";
 import { env } from "@/env.mjs";
 
 import { UserProvider } from "./context/userContext";
 
 const { chains, publicClient, webSocketPublicClient } = configureChains(
-  [CHAIN],
+  [CHAIN, litChronicle],
   [infuraProvider({ apiKey: env.NEXT_PUBLIC_INFURA_ID }), publicProvider()],
 );
 

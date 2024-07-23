@@ -14,7 +14,7 @@ export const env = createEnv({
     NEXT_PUBLIC_TALENTLAYER_DID_ADDRESS: z.string().min(1),
     NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: z.string().min(1),
     NEXT_PUBLIC_GITHUB_OAUTH_CLIENT_ID: z.string().min(1),
-    NEXT_PUBLIC_LIT_PKP: z.string().min(1),
+    NEXT_PUBLIC_LIT_PKP: z.string(),
   },
   // Only need to destructure client variables
   experimental__runtimeEnv: {

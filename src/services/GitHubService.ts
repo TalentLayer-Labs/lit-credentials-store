@@ -3,9 +3,10 @@ import { ExecuteJsResponse } from "@lit-protocol/types";
 import axios from "axios";
 import { ethers } from "ethers";
 
-import { FIXED_PKP } from "@/constants/config";
 import { lit } from "@/utils/lit-utils/lit";
 import { signAndSaveAuthMessage } from "@/utils/lit-utils/signature";
+
+import { ICredential } from "../interfaces/Credential";
 
 import { CredentialService } from "./CredentialService";
 
@@ -38,7 +39,7 @@ export class GitHubService implements CredentialService {
     return data.data.access_token;
   }
 
-  async fetchCredential(accessToken: string, address: string, client: any): Promise<Credential> {
+  async fetchCredential(accessToken: string, address: string, client: any): Promise<ICredential> {
     console.log("Fetching credential from GitHub...");
     const authSig = await signAndSaveAuthMessage({
       web3: client,
@@ -53,7 +54,7 @@ export class GitHubService implements CredentialService {
       credential: responseData.credential,
       signature1: signatures.sig1,
       issuer: 'Lit Protocol',
-    } as Credential;
+    };
   }
 
   private async initLitAction(githubAccessToken: string, userAddress: string, authSig: any, client: any) {

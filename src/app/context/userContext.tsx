@@ -6,12 +6,12 @@ import { useAccount, useContractRead, usePrepareContractWrite, useContractWrite 
 import { talentlayerIdABI } from "@/abis/talentlayer-id";
 import { env } from "@/env.mjs";
 
-import { Credential } from "../../interfaces/Credential";
+import { ICredential } from "../../interfaces/Credential";
 
 interface ProfileType {
   id: string;
-  credentials: Credential[];
-  // Define the structure of the profile object
+  credentials: ICredential[];
+  accessToken: string;
 }
 
 interface UserContextType {
@@ -19,10 +19,11 @@ interface UserContextType {
   profile: ProfileType | undefined;
   initialProfile: ProfileType | undefined;
   newCid: string | undefined;
-  setNewCid: (cid: string) => void;
   transactionHash: string | undefined;
-  writeProfile: () => Promise<void>;
-  loading: boolean; // Add loading state
+  loading: boolean;
+  udaptedUserTxHash: string | undefined;
+  WriteProfile: ({newCid}: {newCid: string}) => Promise<string | undefined>;
+  setNewCid: (cid: string) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -30,9 +31,9 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { address } = useAccount();
   const [initialProfile, setInitialProfile] = useState<ProfileType | undefined>(undefined);
-  const [newCid, setNewCid] = useState<string | undefined>(undefined);
   const [udaptedUserTxHash, setUdaptedUserTxHash] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState<boolean>(true); // Initialize loading state
+  const [newCid, setNewCid] = useState<string | undefined>(undefined);
 
   // Fetch the user's TalentLayer ID
   const { data: id } = useContractRead(
@@ -86,34 +87,45 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchProfileData();
   }, [profile]);
 
-  // Prepare the contract write to update the user's profile
-  const { config } = usePrepareContractWrite(
-    newCid && id
-      ? {
-          abi: talentlayerIdABI,
-          address: env.NEXT_PUBLIC_TALENTLAYER_DID_ADDRESS as `0x${string}`,
-          account: address,
-          args: [id, newCid],
-          functionName: "updateProfileData",
+  const WriteProfile = ({newCid}: {newCid: string}) => {
+    // Prepare the contract write to update the user's profile
+    const { config } = usePrepareContractWrite(
+      newCid && id
+        ? {
+            abi: talentlayerIdABI,
+            address: env.NEXT_PUBLIC_TALENTLAYER_DID_ADDRESS as `0x${string}`,
+            account: address,
+            args: [id, newCid],
+            functionName: "updateProfileData",
+          }
+        : undefined,
+    );
+
+    const { writeAsync } = useContractWrite(config);
+
+    useEffect(() => {
+      
+      if (udaptedUserTxHash) return; // do not execute a 2nd time
+      
+      const executeWriteProfile = async () => {
+        if (newCid && config && writeAsync) {
+          try {
+            const { hash } = await writeAsync();
+            setUdaptedUserTxHash(hash);
+            return hash;
+          } catch (err) {
+            console.error(err);
+          }
         }
-      : undefined,
-  );
+      };
 
-  const { writeAsync } = useContractWrite(config);
-
-  const writeProfile = async (): Promise<void> => {
-    if (!newCid || !writeAsync) return;
-    try {
-      const { hash } = await writeAsync();
-      setUdaptedUserTxHash(hash);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+      executeWriteProfile();
+    }, [writeAsync]);
+  }
 
   return (
     <UserContext.Provider
-      value={{ profile, initialProfile, newCid, setNewCid, udaptedUserTxHash, writeProfile, loading }} // Include loading in context
+      value={{ profile, initialProfile, newCid, setNewCid, udaptedUserTxHash, WriteProfile, loading }} // Include loading in context
     >
       {children}
     </UserContext.Provider>

@@ -21,7 +21,7 @@ interface UserContextType {
   newCid: string | undefined;
   loading: boolean;
   udaptedUserTxHash: string | undefined;
-  WriteProfile: ({newCid}: {newCid: string}) => Promise<string | undefined>;
+  WriteProfile: ({newCid}: {newCid: string}) => string | undefined;
   setNewCid: (cid: string) => void;
 }
 
@@ -86,7 +86,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchProfileData();
   }, [profile]);
 
-  const WriteProfile = async ({newCid}: {newCid: string}): Promise<string | undefined> => {
+  const WriteProfile = ({ newCid }: { newCid: string }): string | undefined => {
     // Prepare the contract write to update the user's profile
     const { config } = usePrepareContractWrite(
       newCid && id
@@ -103,18 +103,18 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { writeAsync } = useContractWrite(config);
 
     useEffect(() => {
-      
       if (udaptedUserTxHash) return; // do not execute a 2nd time
-      
-      const executeWriteProfile = async () => {
+
+      const executeWriteProfile = () => {
         if (newCid && config && writeAsync) {
-          try {
-            const { hash } = await writeAsync();
-            setUdaptedUserTxHash(hash);
-            return hash;
-          } catch (err) {
-            console.error(err);
-          }
+          writeAsync()
+            .then(({ hash }) => {
+              setUdaptedUserTxHash(hash);
+              return hash;
+            })
+            .catch((err) => {
+              console.error(err);
+            });
         }
       };
 

@@ -412,6 +412,7 @@ export default function CredentialPage() {
       {udaptedUserTxHash && (
         <div>
           ✅ The credential has been added to your <a href={`https://starterkit-lit.vercel.app/dashboard/profile/edit/trust-score`} target="_blank" className="text-blue-500">profile</a>.<br/>
+          (you may need to refresh the page after 10-15sec to see the credential)<br/>
           Click{" "}
           <a
             href={`${process.env.NEXT_PUBLIC_BLOCKEXPLORER_LINK}/tx/${udaptedUserTxHash}`}

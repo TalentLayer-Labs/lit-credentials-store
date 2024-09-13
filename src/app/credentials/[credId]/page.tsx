@@ -352,7 +352,7 @@ export default function CredentialPage() {
     return <div>Credential Not Found</div>;
   }
 
-  if ((!profile || !(profile as any[])[3]) && stepId !== 2 && stepId !== 3) {
+  if ((!profile) && stepId !== 2 && stepId !== 3) {
     return (
       <div>
         <div className="">TalentLayer ID not found</div>

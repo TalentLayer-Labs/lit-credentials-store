@@ -42,7 +42,6 @@ export default function CredentialPage() {
   const { chain } = useNetwork();
   const { profile, initialProfile, newCid, setNewCid, WriteProfile, udaptedUserTxHash } = useUserContext() as { profile: any, initialProfile: any, newCid: any, setNewCid: any, WriteProfile: any, udaptedUserTxHash: any };
   const [updatedProfile, setUpdatedProfile] = useState<any>();
-
   let service: CredentialService | null = null;
 
   // Init the service (github, gitlab...)
@@ -376,12 +375,14 @@ export default function CredentialPage() {
   }
 
   if ((!profile) && stepId !== 2 && stepId !== 3) {
+    const isOnFujiNetwork = chain?.id === avalancheFuji.id;
     return (
       <div>
         <div className="">TalentLayer ID not found</div>
         <div className="flex">
-          {!profile && switchNetwork && <p className="mr-2">Connect your wallet on the <a href="#" onClick={() => switchNetwork(avalancheFuji.id)} target="_blank" className="text-blue-500">{avalancheFuji.name}</a> network or:</p>}
-          <CreateTalentLayerId />
+          {!address && <p>Connect your wallet to start</p>}
+          {!profile && !isOnFujiNetwork && switchNetwork && <p className="mr-2">Connect your wallet on the <a href="#" onClick={(e) => {e.preventDefault(); switchNetwork(avalancheFuji.id)}} target="_blank" className="text-blue-500">{avalancheFuji.name}</a> network</p>}
+          {!profile && isOnFujiNetwork && <p>You are on the {avalancheFuji.name} network, but you don&apos;t have a TalentLayer ID yet : <CreateTalentLayerId /></p>}
         </div>
       </div>
     );

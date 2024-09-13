@@ -73,7 +73,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true); // Set loading to true when starting fetch
       try {
         const { data } = await axios.get<ProfileType>(
-          `${process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL}/ipfs/${oldProfileCID}`,
+          `${env.NEXT_PUBLIC_IPFS_GATEWAY_URL}/ipfs/${oldProfileCID}`,
         );
         setInitialProfile(data);
       } catch (error) {

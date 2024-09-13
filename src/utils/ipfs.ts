@@ -1,3 +1,4 @@
+import { env } from "@/env.mjs";
 import axios from "axios";
 import { create, IPFSHTTPClient } from "ipfs-http-client";
 
@@ -20,7 +21,7 @@ export const pinToTheGraph = async (data: any): Promise<string> => {
 };
 
 export const postToIPFSwithPinata = async (data: any): Promise<string> => {
-  const JWT = process.env.NEXT_PUBLIC_PINATA_JWT;
+  const JWT = env.NEXT_PUBLIC_PINATA_JWT;
 
   const pinJSONToIPFS = async (jsonData: any) => {
     const formData = new FormData();

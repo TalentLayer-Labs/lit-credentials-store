@@ -4,7 +4,6 @@ import { getDefaultWallets, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { ThemeProvider } from "next-themes";
 import { ThemeProviderProps } from "next-themes/dist/types";
 import { WagmiConfig, configureChains, createConfig } from "wagmi";
-import { infuraProvider } from "wagmi/providers/infura";
 import { publicProvider } from "wagmi/providers/public";
 
 import { CHAIN, litChronicle } from "@/constants/chains";
@@ -14,7 +13,7 @@ import { UserProvider } from "./context/user-context";
 
 const { chains, publicClient, webSocketPublicClient } = configureChains(
   [CHAIN, litChronicle],
-  [infuraProvider({ apiKey: env.NEXT_PUBLIC_INFURA_ID }), publicProvider()],
+  [publicProvider()],
 );
 
 const { connectors } = getDefaultWallets({

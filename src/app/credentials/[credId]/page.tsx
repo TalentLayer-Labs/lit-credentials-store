@@ -439,7 +439,7 @@ export default function CredentialPage() {
           (you may need to refresh the page after 10-15sec to see the credential)<br/>
           Click{" "}
           <a
-            href={`${process.env.NEXT_PUBLIC_BLOCKEXPLORER_LINK}/tx/${udaptedUserTxHash}`}
+            href={`${env.NEXT_PUBLIC_BLOCKEXPLORER_LINK}/tx/${udaptedUserTxHash}`}
             target="_blank"
             className="text-blue-500 hover:underline"
           >

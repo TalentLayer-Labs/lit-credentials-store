@@ -7,6 +7,8 @@ import { AccessControlConditions } from "@lit-protocol/types";
 import { GetWalletClientResult } from "@wagmi/core";
 import { ethers } from 'ethers';
 
+import { litChronicle } from '@/constants/chains';
+
 import { signAndSaveAuthMessage } from "./signature";
 
 class Lit {
@@ -93,6 +95,12 @@ class Lit {
       ],
     });
     return mintInfo.pkp;
+  }
+
+  async checkLitBalance(address: string): Promise<number> {
+    const provider = new ethers.providers.JsonRpcProvider(litChronicle.rpcUrls.default.http[0]);
+    const balance = await provider.getBalance(address);
+    return parseFloat(ethers.utils.formatEther(balance));
   }
 }
 

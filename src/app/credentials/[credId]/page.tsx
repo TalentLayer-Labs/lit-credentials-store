@@ -128,6 +128,22 @@ export default function CredentialPage() {
   const Step2Block = () => {
     const isOnLitNetwork = chain?.id === litChronicle.id;
     const [loading, setLoading] = useState(false);
+    const [hasLitTokens, setHasLitTokens] = useState(false);
+
+    useEffect(() => {
+      const checkLitBalance = async () => {
+        if (isOnLitNetwork && address) {
+          const balance = await lit.checkLitBalance(address);
+          console.log("balance", balance);
+          setHasLitTokens(balance >= 0.000001);
+        }
+      };
+
+      checkLitBalance(); // Initial check
+      const intervalId = setInterval(checkLitBalance, 5000); // Check every 5 seconds
+
+      return () => clearInterval(intervalId); // Cleanup on unmount
+    }, [isOnLitNetwork, address]);
 
     if (!service || !code || !address) {
       return <div>Service not found</div>;
@@ -158,6 +174,13 @@ export default function CredentialPage() {
       {isOnLitNetwork && 
         <div>
           <p>✅ You are on the Lit network</p>
+          
+          {hasLitTokens ? (
+            <p>✅ You have some LIT tokens from the Lit Faucet</p>
+          ) : (
+            <p>You need some LIT tokens from the Faucet: <a href="https://faucet.litprotocol.com/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">https://faucet.litprotocol.com/</a></p>
+          )}
+          
           {credential && <div>
             <p>✅ User signature</p>
             <p>✅ PKP minted</p>
@@ -170,7 +193,7 @@ export default function CredentialPage() {
                 onClick={() => setStepId(3)}>Go To Step 3</a>
             </div>
           </div>}
-          {!credential && !loading &&
+          {!credential && !loading && hasLitTokens &&
           <div className="mt-4">
             <a
               href="#"

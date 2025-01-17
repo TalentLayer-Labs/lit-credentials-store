@@ -49,6 +49,7 @@ class CustomError extends Error {
   static WAKATIME_ERROR = "WAKATIME_ERROR"
 }
 
+
 // Using concatenation with proper escaping of quotes and new lines.
 // GraphQL queries.
 const GRAPHQL_REPOS_FIELD = `
@@ -529,6 +530,8 @@ async function createClaims(token) {
   return claims
 }
 
+
+
 const go = async () => {
 
   const claims = await createClaims(githubAccessToken)
@@ -550,12 +553,8 @@ const go = async () => {
     },
   };
 
-  // FIXME: toSign must not be empty
-  // await Lit.Actions.signEcdsa({ toSign: JSON.stringify(credentials), publicKey, sigName });
-  
-  // Alternative 
-  // (pass a random toSign from the frontend and return the credentials in the response)
-  await Lit.Actions.signEcdsa({ toSign, publicKey, sigName });
+  const toSignETH = ethers.utils.arrayify(ethers.utils.keccak256(ethers.utils.toUtf8Bytes("Hello world !")));
+  await Lit.Actions.signEcdsa({ toSign: toSignETH, publicKey, sigName });
   LitActions.setResponse({ response: JSON.stringify(credentials) });
 };
 

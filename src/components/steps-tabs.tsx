@@ -2,10 +2,11 @@ import { CheckIcon } from "@heroicons/react/24/solid";
 
 const steps = [
   { id: "01", name: "Connect your web2 profile", href: "#" },
-  { id: "02", name: "Save the credentials", href: "#" },
+  { id: "02", name: "Fetch using Lit actions", href: "#" },
+  { id: "03", name: "Save the credentials", href: "#" },
 ];
 
-export default function StepsTabs({ stepId }: { stepId: number }) {
+export function StepsTabs({ stepId }: { stepId: number }) {
   return (
     <nav aria-label="Progress">
       <ol

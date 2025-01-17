@@ -1,9 +1,10 @@
-interface Credential {
+/* eslint-disable unicorn/filename-case */
+export interface ICredential {
   id: string;
-  issuer: string;
-  signature1: string;
+  issuer?: string;
+  signature1?: string;
   signature2?: string;
-  credential: {
+  credential?: {
     id: string;
     author: string;
     platform: string;

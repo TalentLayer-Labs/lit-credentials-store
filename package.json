@@ -11,14 +11,15 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "postbuild": "next-sitemap",
-    "generate-types": "export $(grep 'SUPABASE_PROJECT_REF' .env.local | xargs) && npx supabase gen types typescript --project-id $SUPABASE_PROJECT_REF --schema public > src/types/supabase.ts"
+    "generate-types": "export $(grep 'SUPABASE_PROJECT_REF' .env.local | xargs) && npx supabase gen types typescript --project-id $SUPABASE_PROJECT_REF --schema public > src/types/supabase.ts",
+    "generate-litaction": "node ./src/utils/lit-utils/0-lit-action-merge.js"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
     "@hookform/resolvers": "^3.3.2",
-    "@lit-protocol/lit-node-client": "^5.0.0",
-    "@lit-protocol/types": "^3.0.24",
+    "@lit-protocol/lit-node-client": "^5.1.0",
+    "@lit-protocol/types": "^3.2.6",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-form": "^0.0.3",
     "@radix-ui/react-toast": "^1.1.5",

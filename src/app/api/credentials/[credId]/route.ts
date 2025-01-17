@@ -2,6 +2,7 @@ import axios from "axios";
 import { ethers } from "ethers";
 
 import { IS_USING_LIT_ACTION } from "@/constants/config";
+import { env } from "@/env.mjs";
 import { generateUUIDwithTimestamp } from "@/utils/uuid";
 
 import { fetchStats, fetchTopLanguages } from "../../route";
@@ -135,7 +136,7 @@ async function createClaims(token: string) {
 }
 
 export async function POST(request: Request) {
-  const clientId = process.env.NEXT_PUBLIC_GITHUB_OAUTH_CLIENT_ID || "";
+  const clientId = env.NEXT_PUBLIC_GITHUB_OAUTH_CLIENT_ID || "";
   const clientSecret = process.env.NEXT_PRIVATE_GITHUB_OAUTH_CLIENT_SECRET || "";
   const { address, code } = await request.json();
 

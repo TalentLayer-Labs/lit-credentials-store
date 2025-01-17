@@ -12,7 +12,7 @@ export default function Home() {
 
   return (
     <div>
-      <div className="mt-10 text-center text-3xl">Get Credentials</div>
+      <h1 className="mt-10 text-center text-3xl">Get Credentials</h1>
       <div className="mt-10">
         <TextFieldRoot>
           <TextFieldSlot>
@@ -33,11 +33,13 @@ export default function Home() {
             return availableCreds[credId].name.toLowerCase().includes(search.toLowerCase());
           })
           .map((credId) => (
-            <Box height="9" key={credId}>
-              <div
-                onClick={() => router.push(`/credentials/${credId}`, { scroll: false })}
-                className="rounded-lg border-2 border-black p-5"
-              >
+            <Box
+              height="9"
+              key={credId}
+              onClick={() => { router.push(`/credentials/${credId}`, { scroll: false })}}
+              className="cursor-pointer"
+            >
+              <div className="rounded-lg border-2 border-black p-5">
                 {availableCreds[credId].name} Credential
               </div>
             </Box>

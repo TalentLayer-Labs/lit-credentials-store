@@ -1,6 +1,6 @@
 # Lit Credential Store
 
-## Introduction
+## ℹ️ Introduction to the External Data Access Control & Credential Module
 
 Today, diverse teams building in Web3 require access to third-party off-chain data. This data is often personal in nature and touches various regulatory frameworks including GDPR. Authenticity, access control and encryption of this data is necessary - currently there are no standard methods for enabling this.
 
@@ -15,6 +15,7 @@ The External Data Access Control & Credential Module is a framework and develope
 - There is no accessible method for teams to import off-chain personal data and natively gate access control
 
 **Solution:**
+
 - A tool and standard framework that lets developers create diverse access-controlled off-chain data attestations
 - A system that can be configured to pull in data from any third-party source
 - A system that can be compatible with existing DID and user identity solutions

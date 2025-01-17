@@ -2,7 +2,7 @@ interface Credential {
   id: string;
   issuer: string;
   signature1: string;
-  signature2: string;
+  signature2?: string;
   credential: {
     id: string;
     author: string;

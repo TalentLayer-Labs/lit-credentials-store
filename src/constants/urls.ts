@@ -1,8 +1,10 @@
-import { hardhat, polygon, polygonMumbai } from "wagmi/chains";
+import { hardhat, polygon } from "wagmi/chains";
+
+import { polygonAmoy } from "./chains";
 
 export const EXPLORER_URL: Record<number, string> = {
   [hardhat.id]: "",
-  [polygonMumbai.id]: "https://mumbai.polygonscan.com",
+  [polygonAmoy.id]: "https://amoy.polygonscan.com",
   [polygon.id]: "https://polygonscan.com",
 };
 

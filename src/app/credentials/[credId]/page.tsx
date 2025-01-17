@@ -1,9 +1,10 @@
 "use client";
 
 import { HomeIcon } from "@heroicons/react/24/solid";
-import { AccessControlConditions } from "@lit-protocol/types";
+import { AccessControlConditions, AuthSig, ExecuteJsResponse } from "@lit-protocol/types";
 import { Card, Text } from "@radix-ui/themes";
 import axios from "axios";
+import { ethers } from "ethers";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -16,13 +17,15 @@ import {
 } from "wagmi";
 
 import { talentlayerIdABI } from "@/abis/talentlayer-id";
-import { availableCreds } from "@/availableCred";
+import { availableCreds } from "@/available-cred";
 import { CreateTalentLayerId } from "@/components/create-talent-layer-id";
 import StepsTabs from "@/components/steps-tabs";
 import { env } from "@/env.mjs";
 import { postToIPFS } from "@/utils/ipfs";
-import lit from "@/utils/lit-utils/lit";
+import { lit } from "@/utils/lit-utils/lit";
+import { signAndSaveAuthMessage } from "@/utils/lit-utils/signature";
 import { generateUUIDwithTimestamp } from "@/utils/uuid";
+import { FIXED_PKP } from "@/constants/config";
 
 export default function CredentialPage() {
   const [stepId, setStepId] = useState(1);
@@ -35,6 +38,7 @@ export default function CredentialPage() {
   const [initialProfile, setInitialProfile] = useState<any>({});
   const [transactionHash, setTransactionHash] = useState<string>();
   const { credId } = useParams<{ credId: string }>();
+  const { data: client } = useWalletClient();
 
   useEffect(() => {
     if (!Object.hasOwn(availableCreds, credId)) {
@@ -48,16 +52,39 @@ export default function CredentialPage() {
   }, [credId]);
 
   useEffect(() => {
-    if (!code || !address) return;
+    console.log("credId = ", credId);
+    if (!address || !client) {
+      // TODO: set error message
+      console.log("you have to connect your wallet");
+    }
+    if (!code || !address || !client) return;
 
     (async () => {
       setLoading(true);
 
       try {
-        const {
-          data: { credential: _credential },
-        } = await axios.post(`/api/credentials/${credId}`, { code, address });
-        setCredential(_credential);
+        // Get github access key
+        const { data } = await axios.post(`/api/credentials/${credId}`, { code, address });
+        const access_token = data.data.access_token;
+
+        // get user signature
+        let authSig = await signAndSaveAuthMessage({
+          web3: client,
+          expiration: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
+        });
+
+        // get credentials from serverless lit action
+        const {signatures, response } = await initLitAction(access_token, client.account.address, authSig) as ExecuteJsResponse;
+        const responseObject = response as any; // used to fix type error
+
+        const credential: Credential = {
+          id: responseObject.id,
+          credential: responseObject.credential,
+          signature1: signatures.sig1,
+          issuer: 'Lit Protocol',
+        } as Credential;
+
+        setCredential(credential);
 
         setStepId(2);
       } catch (e) {
@@ -66,9 +93,7 @@ export default function CredentialPage() {
         setLoading(false);
       }
     })();
-  }, [code, address, credId]);
-
-  const { data: client } = useWalletClient();
+  }, [code, address, credId, client]);
 
   const { data: id } = useContractRead(
     address
@@ -109,8 +134,6 @@ export default function CredentialPage() {
     })();
   }, [profile]);
 
-  console.log(initialProfile);
-
   // This access control condition check if the user balance of the following contract (TalentLayerId) is >= 1
   // Generated with : https://lit-share-modal-v3-playground.netlify.app/
   const accessControlConditions: AccessControlConditions = [
@@ -118,7 +141,7 @@ export default function CredentialPage() {
       conditionType: "evmBasic",
       contractAddress: env.NEXT_PUBLIC_DID_ADDRESS,
       standardContractType: "ERC20",
-      chain: env.NEXT_PUBLIC_CHAIN == "testnet" ? "mumbai" : "polygon",
+      chain: env.NEXT_PUBLIC_CHAIN == "testnet" ? "amoy" : "polygon",
       method: "balanceOf",
       parameters: [":userAddress"],
       returnValueTest: {
@@ -157,6 +180,26 @@ export default function CredentialPage() {
       setTransactionHash(hash);
     })().catch((err) => console.error(err));
   }, [newCid, writeAsync]);
+
+  async function initLitAction(githubAccessToken: string, userAddress: string, authSig: AuthSig) {
+    if (!client) return;
+    // Use the admin pkp if defined or ask the user to mint a new one
+    const pkp = FIXED_PKP ? FIXED_PKP : (await lit.mintPkp(client)).publicKey;
+    const sigName = "sig1";
+    const signatures = await lit.litNodeClient.executeJs({
+      ipfsId: "QmazLt86rcD6dqPpfRL3HL2kW1qVnaETvsLrP8wgkBkEfF",
+      authSig,
+      jsParams: {
+        toSign: ethers.utils.arrayify(ethers.utils.keccak256(ethers.utils.toUtf8Bytes("Hello world"))),
+        publicKey: pkp,
+        sigName,
+        githubAccessToken,
+        userAddress,
+      },
+    });
+
+    return signatures;
+  }
 
   async function encrypt() {
     if (!client || !credential) return;
@@ -322,7 +365,7 @@ export default function CredentialPage() {
                 <button onClick={save} className="btn btn-primary mt-4">
                   Save
                 </button>
-                <button onClick={encrypt} className="ml-4 mt-4 btn btn-secondary">
+                <button onClick={encrypt} className="btn btn-secondary ml-4 mt-4">
                   Encrypt & Save
                 </button>
               </div>

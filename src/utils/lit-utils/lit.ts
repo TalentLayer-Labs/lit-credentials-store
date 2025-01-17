@@ -1,7 +1,7 @@
 "use client";
 
 import * as LitJsSdk from "@lit-protocol/lit-node-client";
-import { EvmContractConditions } from "@lit-protocol/types";
+import { AccessControlConditions } from "@lit-protocol/types";
 import { GetWalletClientResult } from "@wagmi/core";
 
 import { signAndSaveAuthMessage } from "./signature";
@@ -23,9 +23,10 @@ class Lit {
     await this.litNodeClient.connect();
   }
 
+  // We use AccessControlConditions, not to be confused with EVMContractConditions
   async encrypt(
     client: GetWalletClientResult,
-    evmContractConditions: EvmContractConditions,
+    accessControlConditions: AccessControlConditions,
     message: string,
   ) {
     if (!this.litNodeClient.connectedNodes) {
@@ -38,8 +39,7 @@ class Lit {
     });
     const { ciphertext, dataToEncryptHash } = await LitJsSdk.encryptString(
       {
-        evmContractConditions,
-        // accessControlConditions,
+        accessControlConditions,
         authSig,
         chain: this.chain,
         dataToEncrypt: message,

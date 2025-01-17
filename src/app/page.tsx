@@ -1,9 +1,10 @@
 "use client";
-import { availableCreds } from "@/availableCred";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/solid";
 import { Box, Grid, TextFieldInput, TextFieldRoot, TextFieldSlot } from "@radix-ui/themes";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+
+import { availableCreds } from "@/availableCred";
 
 export default function Home() {
   const router = useRouter();
@@ -11,7 +12,7 @@ export default function Home() {
 
   return (
     <div>
-      <div className="text-center text-3xl mt-10">Get Credentials</div>
+      <div className="mt-10 text-center text-3xl">Get Credentials</div>
       <div className="mt-10">
         <TextFieldRoot>
           <TextFieldSlot>
@@ -32,10 +33,10 @@ export default function Home() {
             return availableCreds[credId].name.toLowerCase().includes(search.toLowerCase());
           })
           .map((credId) => (
-            <Box height="9">
+            <Box height="9" key={credId}>
               <div
                 onClick={() => router.push(`/credentials/${credId}`, { scroll: false })}
-                className="rounded-lg p-5 border-2 border-black"
+                className="rounded-lg border-2 border-black p-5"
               >
                 {availableCreds[credId].name} Credential
               </div>

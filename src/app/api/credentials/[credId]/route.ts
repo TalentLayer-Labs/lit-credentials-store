@@ -1,57 +1,13 @@
 import axios from "axios";
 import { ethers } from "ethers";
 
+import { generateUUIDwithTimestamp } from "@/utils/uuid";
+
 import { fetchStats } from "../../route";
 import fetchTopLanguages from "../../route1";
 
-// {
-//   login: 'yashgo0018',
-//   id: 39233126,
-//   node_id: 'MDQ6VXNlcjM5MjMzMTI2',
-//   avatar_url: 'https://avatars.githubusercontent.com/u/39233126?v=4',
-//   gravatar_id: '',
-//   url: 'https://api.github.com/users/yashgo0018',
-//   html_url: 'https://github.com/yashgo0018',
-//   followers_url: 'https://api.github.com/users/yashgo0018/followers',
-//   following_url: 'https://api.github.com/users/yashgo0018/following{/other_user}',
-//   gists_url: 'https://api.github.com/users/yashgo0018/gists{/gist_id}',
-//   starred_url: 'https://api.github.com/users/yashgo0018/starred{/owner}{/repo}',
-//   subscriptions_url: 'https://api.github.com/users/yashgo0018/subscriptions',
-//   organizations_url: 'https://api.github.com/users/yashgo0018/orgs',
-//   repos_url: 'https://api.github.com/users/yashgo0018/repos',
-//   events_url: 'https://api.github.com/users/yashgo0018/events{/privacy}',
-//   received_events_url: 'https://api.github.com/users/yashgo0018/received_events',
-//   type: 'User',
-//   site_admin: false,
-//   name: 'Yash Goyal',
-//   company: null,
-//   blog: 'yashgoyal.dev',
-//   location: null,
-//   email: 'yashgo0018@gmail.com',
-//   hireable: true,
-//   bio: 'Blockchain Developer, Machine Learning Engineer.',
-//   twitter_username: null,
-//   public_repos: 61,
-//   public_gists: 6,
-//   followers: 27,
-//   following: 16,
-//   created_at: '2018-05-13T07:03:07Z',
-//   updated_at: '2023-11-02T12:40:37Z',
-//   private_gists: 1,
-//   total_private_repos: 11,
-//   owned_private_repos: 9,
-//   disk_usage: 192197,
-//   collaborators: 2,
-//   two_factor_authentication: false,
-//   plan: {
-//     name: 'pro',
-//     space: 976562499,
-//     collaborators: 0,
-//     private_repos: 9999
-//   }
-// }
-
 interface Claim {
+  id: string;
   platform: string;
   criteria: string;
   condition: string;
@@ -59,6 +15,7 @@ interface Claim {
 }
 
 interface Credential {
+  id: string;
   author: string;
   platform: string;
   description: string;
@@ -81,6 +38,7 @@ async function createCredential(userAddress: string, claims: Claim[]) {
   console.log(signer);
 
   const credential: Credential = {
+    id: generateUUIDwithTimestamp(),
     author: "Talentlayer Core Team",
     platform: "github.com",
     description:
@@ -103,6 +61,7 @@ async function createCredential(userAddress: string, claims: Claim[]) {
   const signature2 = await signer.signMessage(credentialHash2);
 
   return {
+    id: generateUUIDwithTimestamp(),
     issuer: await signer.getAddress(),
     signature1,
     signature2,
@@ -127,6 +86,7 @@ async function generateClaims(token: string) {
   const createdAtMonth = new Date(createdAt.getFullYear(), createdAt.getMonth());
 
   const accountCreationClaim = {
+    id: generateUUIDwithTimestamp(),
     platform: "github.com",
     criteria: "accountCreation",
     condition: "==",
@@ -137,6 +97,7 @@ async function generateClaims(token: string) {
 
   if (userData.followers > 0) {
     const followersClaim = {
+      id: generateUUIDwithTimestamp(),
       platform: "github.com",
       criteria: "followers",
       condition: ">=",
@@ -155,6 +116,7 @@ async function generateClaims(token: string) {
     for (const matrixPoint of matrixPoints) {
       if ((stats as any)[matrixPoint] > 0) {
         claims.push({
+          id: generateUUIDwithTimestamp(),
           platform: "github.com",
           criteria: matrixPoint,
           condition: "==",
@@ -172,6 +134,7 @@ async function generateClaims(token: string) {
 
   if (top5Languages.length != 0) {
     claims.push({
+      id: generateUUIDwithTimestamp(),
       platform: "github.com",
       criteria: "top5Languages",
       condition: "==",
